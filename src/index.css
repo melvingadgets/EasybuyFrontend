@@ -83,3 +83,20 @@
     min-width: 320px;
   }
 }
+
+@keyframes loader-grow-size {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(5);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.loader-grow-size {
+  animation: loader-grow-size 1.6s ease-in-out infinite;
+  transform-origin: center;
+}

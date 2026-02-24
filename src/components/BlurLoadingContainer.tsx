@@ -67,7 +67,7 @@ export const BlurLoadingContainer = ({
         }`}
       >
         <div className="rounded-full border border-border bg-background/85 p-3 shadow-soft backdrop-blur-md">
-          <div className="relative h-10 w-10">
+          <div className="relative h-10 w-10 loader-grow-size">
             <BounceLoader
               color="hsl(var(--primary))"
               size={40}
