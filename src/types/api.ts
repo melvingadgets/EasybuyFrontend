@@ -1,0 +1,74 @@
+export type ApiSuccess<T = unknown> = {
+  message: string;
+  success?: number;
+  data?: T;
+  Result?: T;
+};
+
+export type CurrentUser = {
+  _id: string;
+  userName?: string;
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
+  role: "Admin" | "User";
+  email?: string;
+};
+
+export type AppUser = {
+  _id: string;
+  fullName?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  role?: string;
+};
+
+export type EasyBoughtItem = {
+  _id: string;
+  IphoneModel: string;
+  IphoneImageUrl: string;
+  Plan: "Monthly" | "Weekly";
+  downPayment: number;
+  loanedAmount: number;
+  PhonePrice: number;
+  monthlyPlan: 1 | 2 | 3;
+  weeklyPlan: 4 | 8 | 12;
+  UserEmail?: string;
+};
+
+export type DashboardPaymentItem = {
+  amount: number;
+  status: "paid" | "pending" | "approved" | "failed";
+  paymentMethod: "card" | "bank" | "wallet" | "receipt";
+  paidAt: string;
+};
+
+export type DashboardResponse = {
+  totalAmount: number;
+  totalPaid: number;
+  remainingBalance: number;
+  progress: number;
+  nextPaymentDue: string | null;
+  nextPaymentAmount: number;
+  planStatus: "active" | "completed" | "cancelled";
+  recentPayments: DashboardPaymentItem[];
+};
+
+export type ReceiptItem = {
+  _id: string;
+  payment?: string;
+  amount: number;
+  fileUrl: string;
+  fileType: "image" | "pdf";
+  status: "pending" | "approved";
+  createdAt: string;
+};
+
+export type PendingReceiptItem = ReceiptItem & {
+  user?: {
+    _id: string;
+    fullName?: string;
+    email?: string;
+  };
+};
