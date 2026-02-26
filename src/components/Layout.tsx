@@ -115,7 +115,7 @@ export const Layout = () => {
   );
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-background text-foreground">
+    <div className="min-h-screen overflow-x-clip bg-background text-foreground">
       <GlobalLoadingOverlay minDurationMs={150} />
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,_hsl(var(--accent))_0%,_transparent_55%)] dark:hidden" />
       {open && (
@@ -127,7 +127,7 @@ export const Layout = () => {
         />
       )}
 
-      <div className="flex w-full overflow-x-hidden">
+      <div className="flex w-full min-w-0 overflow-x-clip">
         <aside
           className={`fixed inset-y-0 left-0 z-30 w-72 transform border-r border-sidebar-border bg-sidebar p-6 text-sidebar-foreground shadow-soft transition-transform duration-300 md:translate-x-0 ${
             open ? "translate-x-0" : "-translate-x-full"
@@ -202,7 +202,7 @@ export const Layout = () => {
               {renderThemeSwitch("hidden md:inline-flex")}
             </div>
           </header>
-          <main className="min-h-[calc(100dvh-61px)] min-w-0 animate-fade-in p-4 md:min-h-[calc(100dvh-65px)] md:p-8">
+          <main className="min-h-[calc(100dvh-61px)] min-w-0 overflow-x-clip animate-fade-in p-4 md:min-h-[calc(100dvh-65px)] md:p-8">
             <Outlet />
           </main>
         </div>

@@ -6,9 +6,14 @@ import { Provider } from "react-redux";
 import { setupListeners } from "@reduxjs/toolkit/query";
 import App from "./App";
 import { store } from "./store/store";
+import { startDevOverflowGuard } from "./lib/devOverflowGuard";
 import "./index.css";
 
 setupListeners(store.dispatch);
+
+if (import.meta.env.DEV) {
+  startDevOverflowGuard();
+}
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
