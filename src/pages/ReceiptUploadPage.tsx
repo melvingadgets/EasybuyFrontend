@@ -1,8 +1,9 @@
-import { FormEvent, useEffect, useState } from "react";
-import { api } from "../lib/api";
-import type { ApiSuccess, ReceiptItem } from "../types/api";
+import { FormEvent, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { BlurLoadingContainer } from "../components/BlurLoadingContainer";
+import ClipLoader from "react-spinners/ClipLoader";
+import { getRtkErrorMessage } from "../lib/rtkError";
+import { useGetMyReceiptsQuery, useUploadReceiptMutation } from "../store/api/backendApi";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -37,23 +38,15 @@ export const ReceiptUploadPage = () => {
   const [amount, setAmount] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [fileInputKey, setFileInputKey] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [receipts, setReceipts] = useState<ReceiptItem[]>([]);
-  const [loadingTable, setLoadingTable] = useState(true);
+  const receiptsQuery = useGetMyReceiptsQuery(undefined, {
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
+  const [uploadReceipt, { isLoading: loading }] = useUploadReceiptMutation();
 
-  const fetchReceipts = async () => {
-    setLoadingTable(true);
-    try {
-      const { data } = await api.get<ApiSuccess<ReceiptItem[]>>("/api/v1/receipt/my");
-      setReceipts(data.data || []);
-    } finally {
-      setLoadingTable(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchReceipts();
-  }, []);
+  const receipts = useMemo(() => receiptsQuery.data?.data || [], [receiptsQuery.data?.data]);
+  const loadingTable = receiptsQuery.isLoading;
+  const receiptsError = getRtkErrorMessage(receiptsQuery.error as any, "Failed to load receipts");
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -67,21 +60,17 @@ export const ReceiptUploadPage = () => {
       return;
     }
 
-    setLoading(true);
     try {
       const formData = new FormData();
       formData.append("Image", file);
       formData.append("amount", String(parsedAmount));
-      const { data } = await api.post("/api/v1/receipt/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      toast.success(data?.message || "Receipt uploaded");
+      const response = await uploadReceipt(formData).unwrap();
+      toast.success(response?.message || "Receipt uploaded");
       setAmount("");
       setFile(null);
       setFileInputKey((prev) => prev + 1);
-      await fetchReceipts();
-    } finally {
-      setLoading(false);
+    } catch (_error) {
+      // Error toast already handled by the shared RTK base query wrapper.
     }
   };
 
@@ -114,17 +103,30 @@ export const ReceiptUploadPage = () => {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-md bg-primary px-4 py-2.5 text-primary-foreground hover:opacity-90 disabled:opacity-60 md:col-span-3"
+            className="flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-primary-foreground hover:opacity-90 disabled:opacity-60 md:col-span-3"
           >
-            {loading ? "Uploading..." : "Upload Receipt"}
+            {loading ? (
+              <>
+                <ClipLoader color="hsl(var(--primary-foreground))" size={16} speedMultiplier={0.9} />
+                Uploading...
+              </>
+            ) : (
+              "Upload Receipt"
+            )}
           </button>
         </form>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-soft">
         <h2 className="text-lg font-semibold">My Receipts</h2>
-        <BlurLoadingContainer loading={loadingTable} minDurationMs={1300}>
-          <div className="mt-4 overflow-x-auto">
+        <BlurLoadingContainer loading={loadingTable} minDurationMs={150}>
+          <div className="mt-4 w-full max-w-full overflow-x-auto">
+            {receiptsError && (
+              <div className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                {receiptsError}
+              </div>
+            )}
+
             <table className="min-w-full divide-y divide-border rounded-lg border border-border">
               <thead className="bg-muted">
                 <tr>

@@ -1,14 +1,28 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { api } from "../lib/api";
 import { auth } from "../lib/auth";
+import ClipLoader from "react-spinners/ClipLoader";
+import { FaSignInAlt } from "react-icons/fa";
 
 export const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, []);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -27,11 +41,11 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="flex min-h-[70vh] items-center justify-center">
+    <div className="flex h-full items-center justify-center overflow-hidden">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <div className="mx-auto mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-accent text-accent-foreground">
-            *
+            <FaSignInAlt className="text-base" />
           </div>
           <h1 className="text-2xl font-bold">Welcome Back</h1>
           <p className="mt-1 text-sm text-muted-foreground">Sign in to your account</p>
@@ -61,9 +75,16 @@ export const LoginPage = () => {
           </div>
           <button
             disabled={loading}
-            className="w-full rounded-md bg-primary px-4 py-2.5 text-primary-foreground hover:opacity-90 disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
-            {loading ? "Signing in..." : "Login"}
+            {loading ? (
+              <>
+                <ClipLoader color="hsl(var(--primary-foreground))" size={16} speedMultiplier={0.9} />
+                Signing in...
+              </>
+            ) : (
+              "Login"
+            )}
           </button>
         </form>
         <p className="text-center text-sm text-muted-foreground">

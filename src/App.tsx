@@ -11,6 +11,7 @@ import { ItemsPage } from "./pages/ItemsPage";
 import { CreateItemPage } from "./pages/CreateItemPage";
 import { ReceiptUploadPage } from "./pages/ReceiptUploadPage";
 import { AdminReceiptApprovalsPage } from "./pages/AdminReceiptApprovalsPage";
+import { SuperAdminPage } from "./pages/SuperAdminPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ForbiddenPage } from "./pages/ForbiddenPage";
 
@@ -37,11 +38,21 @@ const App = () => {
           <Route path="/receipts" element={<ReceiptUploadPage />} />
         </Route>
 
-        <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
+        <Route element={<ProtectedRoute allowedRoles={["SuperAdmin"]} />}>
           <Route path="/register" element={<RegisterPage />} />
+        </Route>
+
+        <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
           <Route path="/create-user" element={<CreateUserPage />} />
           <Route path="/create-item" element={<CreateItemPage />} />
+        </Route>
+
+        <Route element={<ProtectedRoute allowedRoles={["SuperAdmin"]} />}>
           <Route path="/receipt-approvals" element={<AdminReceiptApprovalsPage />} />
+        </Route>
+
+        <Route element={<ProtectedRoute allowedRoles={["SuperAdmin"]} />}>
+          <Route path="/superadmin" element={<SuperAdminPage />} />
         </Route>
 
         <Route path="/users" element={<Navigate to="/404" replace />} />

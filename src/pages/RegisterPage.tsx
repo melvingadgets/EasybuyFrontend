@@ -2,6 +2,8 @@ import { FormEvent, useState } from "react";
 import { api } from "../lib/api";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
+import ClipLoader from "react-spinners/ClipLoader";
+import { FaUserShield } from "react-icons/fa";
 
 export const RegisterPage = () => {
   const [form, setForm] = useState({
@@ -30,10 +32,10 @@ export const RegisterPage = () => {
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <div className="mx-auto mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-accent text-accent-foreground">
-            +
+            <FaUserShield className="text-base" />
           </div>
-          <h1 className="text-2xl font-bold">Create Admin Account</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Endpoint: POST /api/v1/user/createadmin</p>
+          <h1 className="text-2xl font-bold">Register Admin Account</h1>
+          <p className="mt-1 text-sm text-muted-foreground"></p>
         </div>
 
         <form onSubmit={submit} className="space-y-4 rounded-lg border border-border bg-card p-6 text-card-foreground shadow-soft">
@@ -92,9 +94,16 @@ export const RegisterPage = () => {
           </div>
           <button
             disabled={loading}
-            className="w-full rounded-md bg-primary px-4 py-2.5 font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
           >
-            {loading ? "Submitting..." : "Create Account"}
+            {loading ? (
+              <>
+                <ClipLoader color="hsl(var(--primary-foreground))" size={16} speedMultiplier={0.9} />
+                Submitting...
+              </>
+            ) : (
+              "Create Account"
+            )}
           </button>
         </form>
 

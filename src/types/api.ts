@@ -5,13 +5,15 @@ export type ApiSuccess<T = unknown> = {
   Result?: T;
 };
 
+export type UserRole = "Admin" | "User" | "SuperAdmin";
+
 export type CurrentUser = {
   _id: string;
   userName?: string;
   firstName?: string;
   lastName?: string;
   fullName?: string;
-  role: "Admin" | "User";
+  role: UserRole;
   email?: string;
 };
 
@@ -21,7 +23,7 @@ export type AppUser = {
   firstName?: string;
   lastName?: string;
   email?: string;
-  role?: string;
+  role?: UserRole | string;
 };
 
 export type EasyBoughtItem = {
@@ -35,6 +37,35 @@ export type EasyBoughtItem = {
   monthlyPlan: 1 | 2 | 3;
   weeklyPlan: 4 | 8 | 12;
   UserEmail?: string;
+};
+
+export type SuperAdminCreator = {
+  _id: string;
+  fullName?: string;
+  email?: string;
+  role?: UserRole;
+};
+
+export type SuperAdminUser = {
+  _id: string;
+  fullName?: string;
+  email?: string;
+  role: UserRole;
+  createdByAdmin?: SuperAdminCreator | null;
+  createdUsers?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type SuperAdminUserWithItems = SuperAdminUser & {
+  easyBoughtItems: EasyBoughtItem[];
+};
+
+export type SuperAdminLoginStats = {
+  usersLoggedIn: number;
+  adminsLoggedIn: number;
+  superAdminsLoggedIn: number;
+  totalLoggedIn: number;
 };
 
 export type DashboardPaymentItem = {
@@ -70,5 +101,11 @@ export type PendingReceiptItem = ReceiptItem & {
     _id: string;
     fullName?: string;
     email?: string;
+    createdByAdmin?: {
+      _id: string;
+      fullName?: string;
+      email?: string;
+      role?: UserRole;
+    } | null;
   };
 };

@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { api } from "../lib/api";
 import toast from "react-hot-toast";
+import ClipLoader from "react-spinners/ClipLoader";
 
 const IPHONE_OPTIONS = [
   { model: "iPhone XR", imageUrl: "https://fdn2.gsmarena.com/vv/bigpic/apple-iphone-xr-new.jpg" },
@@ -41,6 +42,10 @@ const WEEKLY_ONLY_MODELS = new Set([
   "iPhone 11",
   "iPhone 11 Pro",
   "iPhone 11 Pro Max",
+  "iPhone 12",
+  "iPhone 12 mini",
+  "iPhone 12 Pro",
+  "iPhone 12 Pro Max",
 ]);
 
 const SIXTY_PERCENT_DOWNPAYMENT_MODELS = new Set([
@@ -67,11 +72,14 @@ const getMonthlyMarkupMultiplier = (months: number) => {
 };
 
 const amountFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "NGN",
   maximumFractionDigits: 2,
 });
 
 const parseFormattedNumber = (value: string) => {
-  const numeric = Number(String(value || "").replace(/,/g, ""));
+  const sanitized = String(value || "").replace(/[^\d.]/g, "");
+  const numeric = Number(sanitized);
   return Number.isFinite(numeric) ? numeric : 0;
 };
 
@@ -86,9 +94,9 @@ const formatInputWithCommas = (value: string) => {
   const decimals = decimalRaw.slice(0, 2);
 
   if (hasTrailingDot && !decimals.length) {
-    return `${formattedInteger}.`;
+    return `₦${formattedInteger}.`;
   }
-  return decimals.length ? `${formattedInteger}.${decimals}` : formattedInteger;
+  return decimals.length ? `₦${formattedInteger}.${decimals}` : `₦${formattedInteger}`;
 };
 
 const formatAmount = (value: number) => amountFormatter.format(value || 0);
@@ -98,11 +106,13 @@ export const CreateItemPage = () => {
     IphoneModel: "iPhone XR",
     Plan: "Weekly",
     PhonePrice: "",
+    downPayment: "",
     monthlyPlan: "1",
     weeklyPlan: "4",
     UserEmail: ""
   });
   const [loading, setLoading] = useState(false);
+  const [downPaymentTouched, setDownPaymentTouched] = useState(false);
   const selectedPhone = useMemo(
     () => IPHONE_OPTIONS.find((item) => item.model === form.IphoneModel) || IPHONE_OPTIONS[0],
     [form.IphoneModel]
@@ -116,15 +126,43 @@ export const CreateItemPage = () => {
     }
   }, [form.Plan, isWeeklyOnly]);
 
-  const calculatedDownPayment = useMemo(() => {
+  useEffect(() => {
+    if (downPaymentTouched) return;
+
     const phonePrice = parseFormattedNumber(form.PhonePrice);
-    return phonePrice * downPaymentMultiplier;
-  }, [downPaymentMultiplier, form.PhonePrice]);
+    const minimumDownPayment = phonePrice * downPaymentMultiplier;
+    setForm((prev) => ({
+      ...prev,
+      downPayment: minimumDownPayment > 0 ? formatInputWithCommas(minimumDownPayment.toFixed(2)) : "",
+    }));
+  }, [downPaymentMultiplier, downPaymentTouched, form.PhonePrice]);
+
+  const phonePriceNumber = useMemo(() => parseFormattedNumber(form.PhonePrice), [form.PhonePrice]);
+  const minimumRequiredDownPayment = useMemo(
+    () => phonePriceNumber * downPaymentMultiplier,
+    [downPaymentMultiplier, phonePriceNumber]
+  );
+
+  const calculatedDownPayment = useMemo(() => {
+    return parseFormattedNumber(form.downPayment);
+  }, [form.downPayment]);
+
+  const downPaymentTooLow = useMemo(
+    () => calculatedDownPayment < minimumRequiredDownPayment && phonePriceNumber > 0,
+    [calculatedDownPayment, minimumRequiredDownPayment, phonePriceNumber]
+  );
+  const downPaymentAbovePhonePrice = useMemo(
+    () => calculatedDownPayment > phonePriceNumber && phonePriceNumber > 0,
+    [calculatedDownPayment, phonePriceNumber]
+  );
+  const invalidDownPayment = useMemo(
+    () => calculatedDownPayment <= 0 || downPaymentTooLow || downPaymentAbovePhonePrice,
+    [calculatedDownPayment, downPaymentAbovePhonePrice, downPaymentTooLow]
+  );
 
   const calculatedLoanedAmount = useMemo(() => {
-    const phonePrice = parseFormattedNumber(form.PhonePrice);
-    return Math.max(phonePrice - calculatedDownPayment, 0);
-  }, [calculatedDownPayment, form.PhonePrice]);
+    return Math.max(phonePriceNumber - calculatedDownPayment, 0);
+  }, [calculatedDownPayment, phonePriceNumber]);
 
   const calculatedNextPayment = useMemo(() => {
     const resolvedPlan = isWeeklyOnly ? "Weekly" : form.Plan;
@@ -142,6 +180,21 @@ export const CreateItemPage = () => {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (phonePriceNumber <= 0) {
+      toast.error("Enter a valid phone price greater than zero");
+      return;
+    }
+    if (invalidDownPayment) {
+      if (downPaymentTooLow) {
+        toast.error(`Down payment cannot be below ${formatAmount(minimumRequiredDownPayment)} for this model`);
+      } else if (downPaymentAbovePhonePrice) {
+        toast.error("Down payment cannot be greater than the phone price");
+      } else {
+        toast.error("Enter a valid down payment");
+      }
+      return;
+    }
+
     setLoading(true);
     try {
       const resolvedPlan = isWeeklyOnly ? "Weekly" : form.Plan;
@@ -151,7 +204,7 @@ export const CreateItemPage = () => {
         Plan: resolvedPlan,
         downPayment: calculatedDownPayment,
         loanedAmount: calculatedLoanedAmount,
-        PhonePrice: parseFormattedNumber(form.PhonePrice),
+        PhonePrice: phonePriceNumber,
         ...(resolvedPlan === "Monthly"
           ? { monthlyPlan: Number(form.monthlyPlan) }
           : { weeklyPlan: Number(form.weeklyPlan) }),
@@ -163,10 +216,12 @@ export const CreateItemPage = () => {
         IphoneModel: "iPhone XR",
         Plan: "Weekly",
         PhonePrice: "",
+        downPayment: "",
         monthlyPlan: "1",
         weeklyPlan: "4",
         UserEmail: ""
       });
+      setDownPaymentTouched(false);
     } finally {
       setLoading(false);
     }
@@ -226,10 +281,10 @@ export const CreateItemPage = () => {
           </label>
           <input
             id="phone-price"
-            className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full rounded-md border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             type="text"
             inputMode="decimal"
-            placeholder="e.g., 1,250,000"
+            placeholder="e.g., ₦1,250,000"
             value={form.PhonePrice}
             onChange={(e) => setForm({ ...form, PhonePrice: formatInputWithCommas(e.target.value) })}
             required
@@ -237,16 +292,36 @@ export const CreateItemPage = () => {
         </div>
         <div className="space-y-2">
           <label htmlFor="down-payment" className="text-sm font-medium">
-            Down Payment ({downPaymentMultiplier * 100}%)
+            Down Payment
           </label>
           <input
             id="down-payment"
-            className="w-full rounded-md border border-input bg-muted px-3 py-2.5 text-sm text-muted-foreground focus:outline-none"
+            className={`w-full rounded-md border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring ${
+              downPaymentTooLow || downPaymentAbovePhonePrice
+                ? "border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300"
+                : "border-input bg-background"
+            }`}
             type="text"
-            placeholder="Auto-calculated"
-            value={Number.isFinite(calculatedDownPayment) ? formatAmount(calculatedDownPayment) : "0"}
-            readOnly
+            inputMode="decimal"
+            placeholder="e.g., ₦500,000"
+            value={form.downPayment}
+            onChange={(e) => {
+              setDownPaymentTouched(true);
+              setForm({ ...form, downPayment: formatInputWithCommas(e.target.value) });
+            }}
+            required
           />
+          <p className="text-xs text-muted-foreground">
+            Minimum required: {formatAmount(minimumRequiredDownPayment)} ({downPaymentMultiplier * 100}% of phone price)
+          </p>
+          {downPaymentTooLow && (
+            <p className="text-xs text-amber-600 dark:text-amber-300">
+              Warning: down payment is below the required minimum for this model.
+            </p>
+          )}
+          {downPaymentAbovePhonePrice && (
+            <p className="text-xs text-destructive">Down payment cannot be greater than phone price.</p>
+          )}
         </div>
         <div className="space-y-2">
           <label htmlFor="loaned-amount" className="text-sm font-medium">
@@ -328,10 +403,17 @@ export const CreateItemPage = () => {
           />
         </div>
         <button
-          disabled={loading}
-          className="rounded-md bg-primary px-4 py-2.5 text-primary-foreground hover:opacity-90 disabled:opacity-60 md:col-span-2"
+          disabled={loading || phonePriceNumber <= 0 || invalidDownPayment}
+          className="flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-primary-foreground hover:opacity-90 disabled:opacity-60 md:col-span-2"
         >
-          {loading ? "Creating..." : "Create Item"}
+          {loading ? (
+            <>
+              <ClipLoader color="hsl(var(--primary-foreground))" size={16} speedMultiplier={0.9} />
+              Creating...
+            </>
+          ) : (
+            "Create Item"
+          )}
         </button>
       </form>
     </section>

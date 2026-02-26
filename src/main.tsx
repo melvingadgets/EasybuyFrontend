@@ -2,14 +2,21 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
+import { Provider } from "react-redux";
+import { setupListeners } from "@reduxjs/toolkit/query";
 import App from "./App";
+import { store } from "./store/store";
 import "./index.css";
+
+setupListeners(store.dispatch);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <App />
-      <Toaster position="top-right" />
-    </BrowserRouter>
+    <Provider store={store}>
+      <BrowserRouter>
+        <App />
+        <Toaster position="top-right" />
+      </BrowserRouter>
+    </Provider>
   </React.StrictMode>
 );

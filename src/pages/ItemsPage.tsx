@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { api } from "../lib/api";
-import type { ApiSuccess, EasyBoughtItem } from "../types/api";
+import { useMemo } from "react";
 import { BlurLoadingContainer } from "../components/BlurLoadingContainer";
+import { getRtkErrorMessage } from "../lib/rtkError";
+import { useGetEasyBoughtItemsQuery } from "../store/api/backendApi";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -12,22 +12,14 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
 const formatCurrency = (value: number) => currencyFormatter.format(value || 0);
 
 export const ItemsPage = () => {
-  const [items, setItems] = useState<EasyBoughtItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const itemsQuery = useGetEasyBoughtItemsQuery(undefined, {
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
 
-  const loadItems = async () => {
-    setLoading(true);
-    try {
-      const { data } = await api.get<ApiSuccess<EasyBoughtItem[]>>("/api/v1/user/geteasyboughtitems");
-      setItems(data.data || []);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadItems();
-  }, []);
+  const items = useMemo(() => itemsQuery.data?.data || [], [itemsQuery.data?.data]);
+  const loading = itemsQuery.isLoading;
+  const errorMessage = getRtkErrorMessage(itemsQuery.error as any, "Failed to load items");
 
   return (
     <section className="rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-soft">
@@ -43,8 +35,14 @@ export const ItemsPage = () => {
         </div>
       </div>
 
-      <BlurLoadingContainer loading={loading} minDurationMs={1300}>
+      <BlurLoadingContainer loading={loading} minDurationMs={150}>
         <div className="mt-6">
+          {errorMessage && (
+            <div className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+              {errorMessage}
+            </div>
+          )}
+
           <div className="mb-4 grid gap-3 sm:grid-cols-4">
             <div className="rounded-lg border border-border bg-muted p-3">
               <p className="text-xs text-muted-foreground">Total Down Payment</p>

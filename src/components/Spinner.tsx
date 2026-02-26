@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ClipLoader from "react-spinners/ClipLoader";
 
 type SpinnerProps = {
   label?: string;
@@ -28,8 +29,8 @@ export const Spinner = ({ label = "Loading...", className = "", delayMs = 500 }:
   if (!visible) return null;
 
   return (
-    <div className={`mt-4 flex items-center gap-3 text-sm text-muted-foreground ${className}`}>
-      <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+    <div className={`mt-4 flex w-full items-center justify-center gap-3 text-sm text-muted-foreground ${className}`}>
+      <ClipLoader color="hsl(var(--primary))" size={16} speedMultiplier={0.85} aria-label="Loading Spinner" />
       <span>{label}</span>
     </div>
   );

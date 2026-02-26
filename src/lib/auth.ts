@@ -1,8 +1,8 @@
 const TOKEN_KEY = "easybuytracker_token";
-type UserRole = "Admin" | "User" | null;
+type UserRole = "Admin" | "User" | "SuperAdmin" | null;
 
 type JwtPayload = {
-  role?: "Admin" | "User";
+  role?: "Admin" | "User" | "SuperAdmin";
   exp?: number;
 };
 

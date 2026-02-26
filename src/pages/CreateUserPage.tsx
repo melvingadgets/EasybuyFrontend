@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 import { api } from "../lib/api";
 import toast from "react-hot-toast";
+import ClipLoader from "react-spinners/ClipLoader";
 
 export const CreateUserPage = () => {
   const [form, setForm] = useState({
@@ -62,9 +63,16 @@ export const CreateUserPage = () => {
         />
         <button
           disabled={loading}
-          className="rounded-md bg-primary px-4 py-2.5 text-primary-foreground hover:opacity-90 disabled:opacity-60 md:col-span-2"
+          className="flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-primary-foreground hover:opacity-90 disabled:opacity-60 md:col-span-2"
         >
-          {loading ? "Creating..." : "Create User"}
+          {loading ? (
+            <>
+              <ClipLoader color="hsl(var(--primary-foreground))" size={16} speedMultiplier={0.9} />
+              Creating...
+            </>
+          ) : (
+            "Create User"
+          )}
         </button>
       </form>
     </section>

@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import { api } from "../lib/api";
-import type { ApiSuccess, CurrentUser, DashboardResponse } from "../types/api";
+import { useMemo } from "react";
 import { BlurLoadingContainer } from "../components/BlurLoadingContainer";
+import { getRtkErrorMessage } from "../lib/rtkError";
+import { useGetCurrentUserQuery, useGetDashboardQuery } from "../store/api/backendApi";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -34,45 +34,36 @@ const planStyles: Record<"active" | "completed" | "cancelled", string> = {
 };
 
 export const DashboardPage = () => {
-  const [data, setData] = useState<DashboardResponse | null>(null);
-  const [profileName, setProfileName] = useState("USER");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const dashboardQuery = useGetDashboardQuery(undefined, {
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
+  const currentUserQuery = useGetCurrentUserQuery(undefined, {
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
 
-  const fetchDashboard = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [dashboardResponse, profileResponse] = await Promise.all([
-        api.get<DashboardResponse>("/api/dashboard"),
-        api
-          .get<ApiSuccess<CurrentUser>>("/api/v1/user/profile")
-          .catch(() => api.get<ApiSuccess<CurrentUser>>("/api/v1/user/getcurrentuser")),
-      ]);
+  const loading = dashboardQuery.isLoading || currentUserQuery.isLoading;
+  const errorMessage = getRtkErrorMessage(
+    (dashboardQuery.error || currentUserQuery.error) as any,
+    "Failed to load dashboard"
+  );
 
-      setData(dashboardResponse.data);
-      const profile = (profileResponse.data.data || {}) as any;
-      const resolvedName = String(profile.FullName || profile.fullName || profile.userName || "USER").trim();
-      setProfileName(resolvedName || "USER");
-    } catch (err: any) {
-      setError(err?.response?.data?.message || "Failed to load dashboard");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchDashboard();
-  }, []);
+  const profileName = useMemo(() => {
+    const profile = (currentUserQuery.data?.data || {}) as any;
+    const resolvedName = String(profile.FullName || profile.fullName || profile.userName || "USER").trim();
+    return resolvedName || "USER";
+  }, [currentUserQuery.data?.data]);
 
   const paidProgress = useMemo(() => {
-    const totalAmount = (data?.totalPaid || 0) + (data?.remainingBalance || 0);
-    const totalPaid = data?.totalPaid || 0;
+    const totalAmount = (dashboardQuery.data?.totalPaid || 0) + (dashboardQuery.data?.remainingBalance || 0);
+    const totalPaid = dashboardQuery.data?.totalPaid || 0;
     if (totalAmount <= 0) return 0;
     return Math.max(0, Math.min((totalPaid / totalAmount) * 100, 100));
-  }, [data?.remainingBalance, data?.totalPaid]);
+  }, [dashboardQuery.data?.remainingBalance, dashboardQuery.data?.totalPaid]);
 
   const progressWidth = useMemo(() => `${paidProgress}%`, [paidProgress]);
+
   const avatarInitials = useMemo(() => {
     const parts = profileName.split(/\s+/).filter(Boolean);
     if (!parts.length) return "U";
@@ -80,14 +71,17 @@ export const DashboardPage = () => {
     return `${parts[0][0] || ""}${parts[1][0] || ""}`.toUpperCase();
   }, [profileName]);
 
-  if (error) {
+  if (errorMessage && !loading) {
     return (
       <section className="rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-soft">
         <h1 className="text-2xl font-semibold">EasyBuy Dashboard</h1>
-        <p className="mt-3 rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</p>
+        <p className="mt-3 rounded-md bg-destructive/10 p-3 text-sm text-destructive">{errorMessage}</p>
         <button
           type="button"
-          onClick={fetchDashboard}
+          onClick={() => {
+            dashboardQuery.refetch();
+            currentUserQuery.refetch();
+          }}
           className="mt-4 rounded-md bg-primary px-4 py-2 text-primary-foreground hover:opacity-90"
         >
           Retry
@@ -96,7 +90,7 @@ export const DashboardPage = () => {
     );
   }
 
-  const dashboard = data || {
+  const dashboard = dashboardQuery.data || {
     totalAmount: 0,
     totalPaid: 0,
     remainingBalance: 0,
@@ -108,7 +102,7 @@ export const DashboardPage = () => {
   };
 
   return (
-    <BlurLoadingContainer loading={loading} minDurationMs={1300}>
+    <BlurLoadingContainer loading={loading} minDurationMs={150}>
       <section className="space-y-6">
       <div className="rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-soft">
         <div className="flex flex-wrap items-center justify-between gap-4">
