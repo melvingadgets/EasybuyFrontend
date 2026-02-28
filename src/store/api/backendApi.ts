@@ -1,15 +1,21 @@
-import { beginGlobalLoad } from "../../lib/globalLoading";
+﻿import { beginGlobalLoad } from "../../lib/globalLoading";
 import { auth } from "../../lib/auth";
 import type {
   ApiSuccess,
   CurrentUser,
   DashboardResponse,
+  EasyBoughtItemCreatedDatePreview,
+  EasyBoughtItemCreatedDateUpdate,
   EasyBoughtItem,
   PendingReceiptItem,
+  ReceiptUploadedDatePreview,
+  ReceiptUploadedDateUpdate,
   ReceiptItem,
   SuperAdminLoginStats,
   SuperAdminUser,
   SuperAdminUserWithItems,
+  UserNextDueDatePreview,
+  UserNextDueDateUpdate,
 } from "../../types/api";
 import {
   createApi,
@@ -50,6 +56,30 @@ const isAbortError = (error: FetchBaseQueryError | undefined) => {
   return fetchError.toLowerCase().includes("abort");
 };
 
+const getApiErrorMessage = (error: FetchBaseQueryError): string => {
+  const payload = (error as any).data;
+  if (payload && typeof payload === "object") {
+    const knownMessage = (payload as any).message || (payload as any).error;
+    if (typeof knownMessage === "string" && knownMessage.trim()) {
+      return knownMessage;
+    }
+  }
+
+  if (
+    error.status === "PARSING_ERROR" &&
+    typeof payload === "string" &&
+    payload.trim().startsWith("<")
+  ) {
+    return "Server returned HTML instead of JSON. Backend may be outdated or endpoint is unavailable.";
+  }
+
+  if ("error" in error && typeof error.error === "string" && error.error.trim()) {
+    return error.error;
+  }
+
+  return "Request failed";
+};
+
 const baseQueryWithUx: BaseQueryFn<string | ExtendedFetchArgs, unknown, FetchBaseQueryError> = async (
   args,
   api,
@@ -69,16 +99,7 @@ const baseQueryWithUx: BaseQueryFn<string | ExtendedFetchArgs, unknown, FetchBas
       !api.signal.aborted &&
       !isAbortError(result.error)
     ) {
-      const payload = (result.error.data as any) || {};
-      const fetchError =
-        "error" in result.error && typeof result.error.error === "string"
-          ? result.error.error
-          : undefined;
-      const message =
-        payload.message ||
-        payload.error ||
-        fetchError ||
-        "Request failed";
+      const message = getApiErrorMessage(result.error);
       toast.error(message);
     }
 
@@ -100,6 +121,7 @@ export const backendApi = createApi({
     "SuperAdminStats",
     "SuperAdminUsers",
     "SuperAdminUsersWithItems",
+    "Maintenance",
   ],
   endpoints: (builder) => ({
     getCurrentUser: builder.query<ApiSuccess<CurrentUser>, void>({
@@ -179,6 +201,84 @@ export const backendApi = createApi({
         { type: "SuperAdminStats", id: "STATS" },
       ],
     }),
+
+    previewReceiptUploadedDate: builder.query<
+      ApiSuccess<ReceiptUploadedDatePreview>,
+      { receiptId: string; uploadedAt: string }
+    >({
+      query: ({ receiptId, uploadedAt }) => ({
+        url: `/api/v1/superadmin/maintenance/receipts/${receiptId}/uploaded-date/preview?uploadedAt=${encodeURIComponent(
+          uploadedAt
+        )}`,
+        suppressErrorToast: true,
+      }),
+      providesTags: [{ type: "Maintenance", id: "DATE" }],
+    }),
+
+    updateReceiptUploadedDate: builder.mutation<
+      ApiSuccess<ReceiptUploadedDateUpdate>,
+      { receiptId: string; uploadedAt: string; reason?: string }
+    >({
+      query: ({ receiptId, uploadedAt, reason }) => ({
+        url: `/api/v1/superadmin/maintenance/receipts/${receiptId}/uploaded-date`,
+        method: "PATCH",
+        body: { uploadedAt, reason: reason || "" },
+        suppressGlobalLoader: true,
+      }),
+      invalidatesTags: [{ type: "Maintenance", id: "DATE" }],
+    }),
+
+    previewUserNextDueDate: builder.query<
+      ApiSuccess<UserNextDueDatePreview>,
+      { userId: string; nextDueDate: string }
+    >({
+      query: ({ userId, nextDueDate }) => ({
+        url: `/api/v1/superadmin/maintenance/users/${userId}/next-due-date/preview?nextDueDate=${encodeURIComponent(
+          nextDueDate
+        )}`,
+        suppressErrorToast: true,
+      }),
+      providesTags: [{ type: "Maintenance", id: "DATE" }],
+    }),
+
+    updateUserNextDueDate: builder.mutation<
+      ApiSuccess<UserNextDueDateUpdate>,
+      { userId: string; nextDueDate: string; reason?: string }
+    >({
+      query: ({ userId, nextDueDate, reason }) => ({
+        url: `/api/v1/superadmin/maintenance/users/${userId}/next-due-date`,
+        method: "PATCH",
+        body: { nextDueDate, reason: reason || "" },
+        suppressGlobalLoader: true,
+      }),
+      invalidatesTags: [{ type: "Maintenance", id: "DATE" }],
+    }),
+
+    previewEasyBoughtItemCreatedDate: builder.query<
+      ApiSuccess<EasyBoughtItemCreatedDatePreview>,
+      { itemId: string; createdAt: string }
+    >({
+      query: ({ itemId, createdAt }) => ({
+        url: `/api/v1/superadmin/maintenance/items/${itemId}/created-date/preview?createdAt=${encodeURIComponent(
+          createdAt
+        )}`,
+        suppressErrorToast: true,
+      }),
+      providesTags: [{ type: "Maintenance", id: "DATE" }],
+    }),
+
+    updateEasyBoughtItemCreatedDate: builder.mutation<
+      ApiSuccess<EasyBoughtItemCreatedDateUpdate>,
+      { itemId: string; createdAt: string; reason?: string }
+    >({
+      query: ({ itemId, createdAt, reason }) => ({
+        url: `/api/v1/superadmin/maintenance/items/${itemId}/created-date`,
+        method: "PATCH",
+        body: { createdAt, reason: reason || "" },
+        suppressGlobalLoader: true,
+      }),
+      invalidatesTags: [{ type: "Maintenance", id: "DATE" }],
+    }),
   }),
 });
 
@@ -194,4 +294,11 @@ export const {
   useGetSuperAdminUsersQuery,
   useGetSuperAdminUsersWithItemsQuery,
   useDeleteSuperAdminUserMutation,
+  useLazyPreviewReceiptUploadedDateQuery,
+  useUpdateReceiptUploadedDateMutation,
+  useLazyPreviewUserNextDueDateQuery,
+  useUpdateUserNextDueDateMutation,
+  useLazyPreviewEasyBoughtItemCreatedDateQuery,
+  useUpdateEasyBoughtItemCreatedDateMutation,
 } = backendApi;
+

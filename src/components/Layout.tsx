@@ -6,6 +6,7 @@ import { GlobalLoadingOverlay } from "./GlobalLoadingOverlay";
 import {
   FaBars,
   FaBoxOpen,
+  FaCalendarAlt,
   FaCheckCircle,
   FaMoon,
   FaPlusSquare,
@@ -37,6 +38,7 @@ const navItems = [
   { to: "/profile", label: "Profile", icon: FaUserCircle, authOnly: true },
   { to: "/receipts", label: "My Receipts", icon: FaReceipt, authOnly: true, roles: ["User"] },
   { to: "/receipt-approvals", label: "Receipt Approvals", icon: FaCheckCircle, authOnly: true, roles: ["SuperAdmin"] },
+  { to: "/superadmin/date-maintenance", label: "Date Maintenance", icon: FaCalendarAlt, authOnly: true, roles: ["SuperAdmin"] },
   { to: "/create-user", label: "Create User", icon: FaUserPlus, authOnly: true, roles: ["Admin"] },
   { to: "/items", label: "EasyBought Items", icon: FaBoxOpen, authOnly: true, roles: ["User"] },
   { to: "/create-item", label: "Create Item", icon: FaPlusSquare, authOnly: true, roles: ["Admin"] },

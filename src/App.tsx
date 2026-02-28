@@ -12,6 +12,7 @@ import { CreateItemPage } from "./pages/CreateItemPage";
 import { ReceiptUploadPage } from "./pages/ReceiptUploadPage";
 import { AdminReceiptApprovalsPage } from "./pages/AdminReceiptApprovalsPage";
 import { SuperAdminPage } from "./pages/SuperAdminPage";
+import { SuperAdminDateMaintenancePage } from "./pages/SuperAdminDateMaintenancePage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ForbiddenPage } from "./pages/ForbiddenPage";
 
@@ -53,6 +54,7 @@ const App = () => {
 
         <Route element={<ProtectedRoute allowedRoles={["SuperAdmin"]} />}>
           <Route path="/superadmin" element={<SuperAdminPage />} />
+          <Route path="/superadmin/date-maintenance" element={<SuperAdminDateMaintenancePage />} />
         </Route>
 
         <Route path="/users" element={<Navigate to="/404" replace />} />

@@ -79,6 +79,7 @@ export type DashboardResponse = {
   totalAmount: number;
   totalPaid: number;
   remainingBalance: number;
+  owedAmount?: number;
   progress: number;
   nextPaymentDue: string | null;
   nextPaymentAmount: number;
@@ -108,4 +109,53 @@ export type PendingReceiptItem = ReceiptItem & {
       role?: UserRole;
     } | null;
   };
+};
+
+export type ReceiptUploadedDatePreview = {
+  receiptId: string;
+  currentUploadedAt: string | null;
+  proposedUploadedAt: string | null;
+  user?: string;
+  plan?: "Monthly" | "Weekly";
+  amount?: number;
+  status?: "pending" | "approved";
+};
+
+export type ReceiptUploadedDateUpdate = {
+  receiptId: string;
+  previousUploadedAt: string | null;
+  updatedUploadedAt: string | null;
+  updatedAt: string | null;
+};
+
+export type UserNextDueDatePreview = {
+  userId: string;
+  fullName?: string;
+  email?: string;
+  currentNextDueDate: string | null;
+  proposedNextDueDate: string | null;
+};
+
+export type UserNextDueDateUpdate = {
+  userId: string;
+  previousNextDueDate: string | null;
+  updatedNextDueDate: string | null;
+  updatedAt: string | null;
+};
+
+export type EasyBoughtItemCreatedDatePreview = {
+  itemId: string;
+  currentCreatedAt: string | null;
+  proposedCreatedAt: string | null;
+  userId?: string;
+  userEmail?: string;
+  iphoneModel?: string;
+  plan?: "Monthly" | "Weekly";
+};
+
+export type EasyBoughtItemCreatedDateUpdate = {
+  itemId: string;
+  previousCreatedAt: string | null;
+  updatedCreatedAt: string | null;
+  updatedAt: string | null;
 };
