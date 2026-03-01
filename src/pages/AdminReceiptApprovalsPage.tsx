@@ -3,7 +3,11 @@ import toast from "react-hot-toast";
 import ClipLoader from "react-spinners/ClipLoader";
 import { BlurLoadingContainer } from "../components/BlurLoadingContainer";
 import { getRtkErrorMessage } from "../lib/rtkError";
-import { useApproveReceiptMutation, useGetPendingReceiptsQuery } from "../store/api/backendApi";
+import {
+  useApproveReceiptMutation,
+  useGetPendingReceiptsQuery,
+  useRejectReceiptMutation,
+} from "../store/api/backendApi";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -26,11 +30,14 @@ export const AdminReceiptApprovalsPage = () => {
     refetchOnReconnect: true,
   });
   const [approveReceipt] = useApproveReceiptMutation();
+  const [rejectReceipt] = useRejectReceiptMutation();
 
   const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [reasonByReceiptId, setReasonByReceiptId] = useState<Record<string, string>>({});
   const [hiddenReceiptIds, setHiddenReceiptIds] = useState<Record<string, boolean>>({});
   const [selectedReceiptId, setSelectedReceiptId] = useState<string | null>(null);
+  const [rejectModalReceiptId, setRejectModalReceiptId] = useState<string | null>(null);
 
   const pendingReceipts = useMemo(() => pendingReceiptsQuery.data?.data || [], [pendingReceiptsQuery.data?.data]);
 
@@ -74,6 +81,31 @@ export const AdminReceiptApprovalsPage = () => {
     };
   }, [selectedReceiptId]);
 
+  useEffect(() => {
+    if (!rejectModalReceiptId) return;
+
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setRejectModalReceiptId(null);
+      }
+    };
+
+    const previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onEscape);
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      window.removeEventListener("keydown", onEscape);
+    };
+  }, [rejectModalReceiptId]);
+
+  const isActionLoading = (receiptId: string) => approvingId === receiptId || rejectingId === receiptId;
+
+  const openRejectModal = (receiptId: string) => {
+    setRejectModalReceiptId(receiptId);
+  };
+
   const approve = async (receiptId: string) => {
     setApprovingId(receiptId);
     try {
@@ -91,6 +123,33 @@ export const AdminReceiptApprovalsPage = () => {
       }
     } finally {
       setApprovingId(null);
+    }
+  };
+
+  const reject = async (receiptId: string) => {
+    const reason = (reasonByReceiptId[receiptId] || "").trim();
+    if (!reason) {
+      toast.error("Reason is required to reject a receipt");
+      return;
+    }
+
+    setRejectingId(receiptId);
+    try {
+      const response = await rejectReceipt({ receiptId, reason }).unwrap();
+      toast.success(response?.message || "Receipt rejected");
+      setReasonByReceiptId((prev) => ({ ...prev, [receiptId]: "" }));
+      setHiddenReceiptIds((prev) => ({ ...prev, [receiptId]: true }));
+      setSelectedReceiptId((current) => (current === receiptId ? null : current));
+      setRejectModalReceiptId((current) => (current === receiptId ? null : current));
+    } catch (error: any) {
+      if (error?.status === 409) {
+        setHiddenReceiptIds((prev) => ({ ...prev, [receiptId]: true }));
+        setSelectedReceiptId((current) => (current === receiptId ? null : current));
+        setRejectModalReceiptId((current) => (current === receiptId ? null : current));
+        pendingReceiptsQuery.refetch();
+      }
+    } finally {
+      setRejectingId(null);
     }
   };
 
@@ -153,26 +212,36 @@ export const AdminReceiptApprovalsPage = () => {
                         }))
                       }
                       className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
-                      placeholder="Optional audit reason"
-                      disabled={approvingId === receipt._id}
+                      placeholder="Optional for approve, required for reject"
+                      disabled={isActionLoading(receipt._id)}
                     />
                   </td>
                   <td className="px-3 py-2 text-sm">
-                    <button
-                      type="button"
-                      onClick={() => approve(receipt._id)}
-                      disabled={approvingId === receipt._id}
-                      className="flex items-center justify-center gap-2 rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:opacity-90 disabled:opacity-60"
-                    >
-                      {approvingId === receipt._id ? (
-                        <>
-                          <ClipLoader color="hsl(var(--primary-foreground))" size={14} speedMultiplier={0.9} />
-                          Approving...
-                        </>
-                      ) : (
-                        "Approve"
-                      )}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => approve(receipt._id)}
+                        disabled={isActionLoading(receipt._id)}
+                        className="flex items-center justify-center gap-2 rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:opacity-90 disabled:opacity-60"
+                      >
+                        {approvingId === receipt._id ? (
+                          <>
+                            <ClipLoader color="hsl(var(--primary-foreground))" size={14} speedMultiplier={0.9} />
+                            Approving...
+                          </>
+                        ) : (
+                          "Approve"
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openRejectModal(receipt._id)}
+                        disabled={isActionLoading(receipt._id)}
+                        className="flex items-center justify-center gap-2 rounded-md bg-destructive px-3 py-1.5 text-xs text-destructive-foreground hover:opacity-90 disabled:opacity-60"
+                      >
+                        Reject
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -270,7 +339,7 @@ export const AdminReceiptApprovalsPage = () => {
 
               <div className="space-y-3 rounded-lg border border-border bg-muted p-3">
                 <label htmlFor="modal-reason" className="text-xs uppercase text-muted-foreground">
-                  Approval Reason
+                  Action Reason
                 </label>
                 <input
                   id="modal-reason"
@@ -283,26 +352,101 @@ export const AdminReceiptApprovalsPage = () => {
                     }))
                   }
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="Optional audit reason"
-                  disabled={approvingId === selectedReceipt._id}
+                  placeholder="Optional for approve, required for reject"
+                  disabled={isActionLoading(selectedReceipt._id)}
                 />
 
-                <button
-                  type="button"
-                  onClick={() => approve(selectedReceipt._id)}
-                  disabled={approvingId === selectedReceipt._id}
-                  className="flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:opacity-90 disabled:opacity-60"
-                >
-                  {approvingId === selectedReceipt._id ? (
-                    <>
-                      <ClipLoader color="hsl(var(--primary-foreground))" size={16} speedMultiplier={0.9} />
-                      Approving...
-                    </>
-                  ) : (
-                    "Approve From Modal"
-                  )}
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => approve(selectedReceipt._id)}
+                    disabled={isActionLoading(selectedReceipt._id)}
+                    className="flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:opacity-90 disabled:opacity-60"
+                  >
+                    {approvingId === selectedReceipt._id ? (
+                      <>
+                        <ClipLoader color="hsl(var(--primary-foreground))" size={16} speedMultiplier={0.9} />
+                        Approving...
+                      </>
+                    ) : (
+                      "Approve From Modal"
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openRejectModal(selectedReceipt._id)}
+                    disabled={isActionLoading(selectedReceipt._id)}
+                    className="flex items-center justify-center gap-2 rounded-md bg-destructive px-4 py-2 text-sm text-destructive-foreground hover:opacity-90 disabled:opacity-60"
+                  >
+                    Reject From Modal
+                  </button>
+                </div>
               </div>
+            </div>
+          </article>
+        </div>
+      )}
+
+      {rejectModalReceiptId && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Reject receipt"
+          onClick={(event) => {
+            if (event.target === event.currentTarget && !isActionLoading(rejectModalReceiptId)) {
+              setRejectModalReceiptId(null);
+            }
+          }}
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-4 backdrop-blur-sm md:items-center"
+        >
+          <article className="w-full max-w-lg rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-soft">
+            <h3 className="text-base font-semibold">Reject Receipt</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Add a reason for rejection. This will be stored and shown to the user.
+            </p>
+            <div className="mt-4 space-y-2">
+              <label htmlFor="reject-reason" className="text-xs uppercase text-muted-foreground">
+                Rejection Reason
+              </label>
+              <textarea
+                id="reject-reason"
+                rows={4}
+                value={reasonByReceiptId[rejectModalReceiptId] || ""}
+                onChange={(event) =>
+                  setReasonByReceiptId((prev) => ({
+                    ...prev,
+                    [rejectModalReceiptId]: event.target.value,
+                  }))
+                }
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                placeholder="State clearly why this receipt was rejected"
+                disabled={isActionLoading(rejectModalReceiptId)}
+              />
+            </div>
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setRejectModalReceiptId(null)}
+                disabled={isActionLoading(rejectModalReceiptId)}
+                className="rounded-md border border-border bg-background px-3 py-2 text-xs text-muted-foreground hover:bg-muted disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => reject(rejectModalReceiptId)}
+                disabled={isActionLoading(rejectModalReceiptId)}
+                className="flex items-center justify-center gap-2 rounded-md bg-destructive px-4 py-2 text-xs text-destructive-foreground hover:opacity-90 disabled:opacity-60"
+              >
+                {rejectingId === rejectModalReceiptId ? (
+                  <>
+                    <ClipLoader color="hsl(var(--destructive-foreground))" size={14} speedMultiplier={0.9} />
+                    Rejecting...
+                  </>
+                ) : (
+                  "Reject Receipt"
+                )}
+              </button>
             </div>
           </article>
         </div>

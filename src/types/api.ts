@@ -30,13 +30,45 @@ export type EasyBoughtItem = {
   _id: string;
   IphoneModel: string;
   IphoneImageUrl: string;
+  capacity?: string;
   Plan: "Monthly" | "Weekly";
   downPayment: number;
   loanedAmount: number;
   PhonePrice: number;
-  monthlyPlan: 1 | 2 | 3;
-  weeklyPlan: 4 | 8 | 12;
+  monthlyPlan?: 1 | 2 | 3;
+  weeklyPlan?: 4 | 8 | 12;
   UserEmail?: string;
+};
+
+export type EasyBuyCatalogItem = {
+  model: string;
+  imageUrl: string;
+  capacities: string[];
+  allowedPlans: Array<"Monthly" | "Weekly">;
+  downPaymentPercentage: 40 | 60;
+  pricesByCapacity?: Record<string, number>;
+};
+
+export type EasyBuyPlanRules = {
+  monthlyDurations: number[];
+  weeklyDurations: number[];
+  monthlyMarkupMultipliers: Record<string, number>;
+  weeklyMarkupMultipliers: Record<string, number>;
+};
+
+export type EasyBuyCatalogResponse = {
+  models: EasyBuyCatalogItem[];
+  planRules: EasyBuyPlanRules;
+};
+
+export type EasyBuyPricingModel = {
+  model: string;
+  capacities: string[];
+  pricesByCapacity: Record<string, number>;
+};
+
+export type EasyBuyPricingResponse = {
+  models: EasyBuyPricingModel[];
 };
 
 export type SuperAdminCreator = {
@@ -93,7 +125,9 @@ export type ReceiptItem = {
   amount: number;
   fileUrl: string;
   fileType: "image" | "pdf";
-  status: "pending" | "approved";
+  status: "pending" | "approved" | "rejected";
+  rejectedAt?: string;
+  rejectionReason?: string;
   createdAt: string;
 };
 
@@ -118,7 +152,7 @@ export type ReceiptUploadedDatePreview = {
   user?: string;
   plan?: "Monthly" | "Weekly";
   amount?: number;
-  status?: "pending" | "approved";
+  status?: "pending" | "approved" | "rejected";
 };
 
 export type ReceiptUploadedDateUpdate = {
@@ -158,4 +192,45 @@ export type EasyBoughtItemCreatedDateUpdate = {
   previousCreatedAt: string | null;
   updatedCreatedAt: string | null;
   updatedAt: string | null;
+};
+
+export type PublicEasyBuyRequestStatus =
+  | "pending_verification"
+  | "verified"
+  | "approved"
+  | "rejected"
+  | "converted";
+
+export type PublicEasyBuyRequest = {
+  _id: string;
+  requestId: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  iphoneModel: string;
+  capacity: string;
+  plan: "Monthly" | "Weekly";
+  status: PublicEasyBuyRequestStatus;
+  rejectionReason?: string;
+  reviewedAt?: string;
+  reviewedBy?: {
+    _id: string;
+    fullName?: string;
+    email?: string;
+    role?: UserRole;
+  } | null;
+  verifiedAt?: string;
+  approvedAt?: string;
+  rejectedAt?: string;
+  convertedAt?: string;
+  convertedEasyBoughtItemId?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PaginationMeta = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
 };

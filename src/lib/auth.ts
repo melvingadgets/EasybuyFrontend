@@ -1,4 +1,6 @@
 const TOKEN_KEY = "easybuytracker_token";
+const SESSION_TOKEN_KEY = "easybuytracker_session_token";
+const LEGACY_SESSION_TOKEN_KEY = "easybuytracker_sessiontoken";
 type UserRole = "Admin" | "User" | "SuperAdmin" | null;
 
 type JwtPayload = {
@@ -28,7 +30,14 @@ const isTokenExpired = (payload: JwtPayload | null): boolean => {
 export const auth = {
   getToken: () => localStorage.getItem(TOKEN_KEY),
   setToken: (token: string) => localStorage.setItem(TOKEN_KEY, token),
-  clearToken: () => localStorage.removeItem(TOKEN_KEY),
+  clearToken: () => {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(SESSION_TOKEN_KEY);
+    localStorage.removeItem(LEGACY_SESSION_TOKEN_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(SESSION_TOKEN_KEY);
+    sessionStorage.removeItem(LEGACY_SESSION_TOKEN_KEY);
+  },
   isLoggedIn: () => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) return false;

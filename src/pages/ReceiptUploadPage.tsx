@@ -38,6 +38,7 @@ export const ReceiptUploadPage = () => {
   const [amount, setAmount] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [fileInputKey, setFileInputKey] = useState(0);
+  const [reasonModal, setReasonModal] = useState<{ receiptId: string; reason: string } | null>(null);
   const receiptsQuery = useGetMyReceiptsQuery(undefined, {
     refetchOnFocus: true,
     refetchOnReconnect: true,
@@ -47,6 +48,8 @@ export const ReceiptUploadPage = () => {
   const receipts = useMemo(() => receiptsQuery.data?.data || [], [receiptsQuery.data?.data]);
   const loadingTable = receiptsQuery.isLoading;
   const receiptsError = getRtkErrorMessage(receiptsQuery.error as any, "Failed to load receipts");
+
+  const closeReasonModal = () => setReasonModal(null);
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -151,11 +154,32 @@ export const ReceiptUploadPage = () => {
                         className={`rounded px-2 py-1 text-xs ${
                           receipt.status === "approved"
                             ? "bg-success/15 text-success"
+                            : receipt.status === "rejected"
+                            ? "bg-destructive/15 text-destructive"
                             : "bg-amber-100 text-amber-700"
                         }`}
                       >
                         {receipt.status}
                       </span>
+                      {receipt.status === "rejected" && receipt.rejectionReason && (
+                        <>
+                          <p className="mt-1 hidden text-xs text-destructive md:block">
+                            Reason: {receipt.rejectionReason}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setReasonModal({
+                                receiptId: receipt._id,
+                                reason: receipt.rejectionReason || "",
+                              })
+                            }
+                            className="mt-1 text-xs text-destructive hover:underline md:hidden"
+                          >
+                            View reason
+                          </button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -171,6 +195,36 @@ export const ReceiptUploadPage = () => {
           </div>
         </BlurLoadingContainer>
       </div>
+
+      {reasonModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Rejection reason"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              closeReasonModal();
+            }
+          }}
+          className="fixed inset-0 z-40 flex items-end justify-center bg-black/45 p-4 backdrop-blur-sm md:hidden"
+        >
+          <article className="w-full max-w-md rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-soft">
+            <h3 className="text-base font-semibold">Receipt Rejection Reason</h3>
+            <p className="mt-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              {reasonModal.reason}
+            </p>
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={closeReasonModal}
+                className="rounded-md border border-border bg-background px-3 py-2 text-xs text-muted-foreground hover:bg-muted"
+              >
+                Close
+              </button>
+            </div>
+          </article>
+        </div>
+      )}
     </section>
   );
 };

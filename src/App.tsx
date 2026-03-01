@@ -13,12 +13,19 @@ import { ReceiptUploadPage } from "./pages/ReceiptUploadPage";
 import { AdminReceiptApprovalsPage } from "./pages/AdminReceiptApprovalsPage";
 import { SuperAdminPage } from "./pages/SuperAdminPage";
 import { SuperAdminDateMaintenancePage } from "./pages/SuperAdminDateMaintenancePage";
+import { SuperAdminPricingPage } from "./pages/SuperAdminPricingPage";
+import { PublicEasyBuyRequestPage } from "./pages/PublicEasyBuyRequestPage";
+import { PublicEasyBuyVerifyPage } from "./pages/PublicEasyBuyVerifyPage";
+import { SuperAdminPublicRequestsPage } from "./pages/SuperAdminPublicRequestsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ForbiddenPage } from "./pages/ForbiddenPage";
 
 const App = () => {
   return (
     <Routes>
+      <Route path="/apply" element={<PublicEasyBuyRequestPage />} />
+      <Route path="/apply/verify" element={<PublicEasyBuyVerifyPage />} />
+
       <Route element={<Layout />}>
         <Route path="/" element={<Navigate to="/login" replace />} />
 
@@ -54,6 +61,8 @@ const App = () => {
 
         <Route element={<ProtectedRoute allowedRoles={["SuperAdmin"]} />}>
           <Route path="/superadmin" element={<SuperAdminPage />} />
+          <Route path="/superadmin/pricing" element={<SuperAdminPricingPage />} />
+          <Route path="/superadmin/public-requests" element={<SuperAdminPublicRequestsPage />} />
           <Route path="/superadmin/date-maintenance" element={<SuperAdminDateMaintenancePage />} />
         </Route>
 

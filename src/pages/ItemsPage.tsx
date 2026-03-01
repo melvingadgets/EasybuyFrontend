@@ -78,6 +78,7 @@ export const ItemsPage = () => {
                 </div>
                 <h2 className="text-base font-semibold">{item.IphoneModel}</h2>
                 <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                  <p>Capacity: {item.capacity || "-"}</p>
                   <p>Plan Type: {item.Plan}</p>
                   <p>Down Payment: {formatCurrency(item.downPayment)}</p>
                   <p>Loaned Amount: {formatCurrency(item.loanedAmount)}</p>

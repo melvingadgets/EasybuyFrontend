@@ -3,11 +3,15 @@ import { auth } from "../../lib/auth";
 import type {
   ApiSuccess,
   CurrentUser,
+  EasyBuyCatalogResponse,
+  EasyBuyPricingResponse,
   DashboardResponse,
   EasyBoughtItemCreatedDatePreview,
   EasyBoughtItemCreatedDateUpdate,
   EasyBoughtItem,
   PendingReceiptItem,
+  PaginationMeta,
+  PublicEasyBuyRequest,
   ReceiptUploadedDatePreview,
   ReceiptUploadedDateUpdate,
   ReceiptItem,
@@ -116,12 +120,15 @@ export const backendApi = createApi({
     "CurrentUser",
     "Dashboard",
     "Items",
+    "EasyBuyCatalog",
+    "EasyBuyPricing",
     "Receipts",
     "PendingReceipts",
     "SuperAdminStats",
     "SuperAdminUsers",
     "SuperAdminUsersWithItems",
     "Maintenance",
+    "PublicEasyBuyRequests",
   ],
   endpoints: (builder) => ({
     getCurrentUser: builder.query<ApiSuccess<CurrentUser>, void>({
@@ -137,6 +144,11 @@ export const backendApi = createApi({
     getEasyBoughtItems: builder.query<ApiSuccess<EasyBoughtItem[]>, void>({
       query: () => ({ url: "/api/v1/user/geteasyboughtitems", suppressErrorToast: true }),
       providesTags: [{ type: "Items", id: "LIST" }],
+    }),
+
+    getEasyBuyCatalog: builder.query<ApiSuccess<EasyBuyCatalogResponse>, void>({
+      query: () => ({ url: "/api/v1/user/easybuy-catalog", suppressErrorToast: true }),
+      providesTags: [{ type: "EasyBuyCatalog", id: "CATALOG" }],
     }),
 
     getMyReceipts: builder.query<ApiSuccess<ReceiptItem[]>, void>({
@@ -173,6 +185,20 @@ export const backendApi = createApi({
       ],
     }),
 
+    rejectReceipt: builder.mutation<ApiSuccess, { receiptId: string; reason: string }>({
+      query: ({ receiptId, reason }) => ({
+        url: `/api/v1/receipt/${receiptId}/reject`,
+        method: "PATCH",
+        body: { reason },
+        suppressGlobalLoader: true,
+      }),
+      invalidatesTags: [
+        { type: "PendingReceipts", id: "LIST" },
+        { type: "Receipts", id: "LIST" },
+        { type: "Dashboard", id: "ME" },
+      ],
+    }),
+
     getSuperAdminLoginStats: builder.query<ApiSuccess<SuperAdminLoginStats>, void>({
       query: () => ({ url: "/api/v1/superadmin/login-stats", suppressErrorToast: true }),
       providesTags: [{ type: "SuperAdminStats", id: "STATS" }],
@@ -186,6 +212,27 @@ export const backendApi = createApi({
     getSuperAdminUsersWithItems: builder.query<ApiSuccess<SuperAdminUserWithItems[]>, void>({
       query: () => ({ url: "/api/v1/superadmin/users-with-items", suppressErrorToast: true }),
       providesTags: [{ type: "SuperAdminUsersWithItems", id: "LIST" }],
+    }),
+
+    getSuperAdminEasyBuyPricing: builder.query<ApiSuccess<EasyBuyPricingResponse>, void>({
+      query: () => ({ url: "/api/v1/superadmin/easybuy-pricing", suppressErrorToast: true }),
+      providesTags: [{ type: "EasyBuyPricing", id: "LIST" }],
+    }),
+
+    updateSuperAdminEasyBuyPricing: builder.mutation<
+      ApiSuccess<EasyBuyPricingResponse & { updatedCount?: number }>,
+      { updates: Array<{ model: string; capacity: string; price: number }> }
+    >({
+      query: ({ updates }) => ({
+        url: "/api/v1/superadmin/easybuy-pricing",
+        method: "PATCH",
+        body: { updates },
+        suppressGlobalLoader: true,
+      }),
+      invalidatesTags: [
+        { type: "EasyBuyPricing", id: "LIST" },
+        { type: "EasyBuyCatalog", id: "CATALOG" },
+      ],
     }),
 
     deleteSuperAdminUser: builder.mutation<ApiSuccess, { userId: string; reason?: string }>({
@@ -279,6 +326,73 @@ export const backendApi = createApi({
       }),
       invalidatesTags: [{ type: "Maintenance", id: "DATE" }],
     }),
+
+    getSuperAdminPublicEasyBuyRequests: builder.query<
+      ApiSuccess<PublicEasyBuyRequest[]> & { pagination?: PaginationMeta },
+      { status?: string; search?: string; page?: number; limit?: number } | void
+    >({
+      query: (params) => {
+        const query = new URLSearchParams();
+        if (params?.status) query.set("status", params.status);
+        if (params?.search) query.set("search", params.search);
+        if (params?.page) query.set("page", String(params.page));
+        if (params?.limit) query.set("limit", String(params.limit));
+
+        const suffix = query.toString() ? `?${query.toString()}` : "";
+        return {
+          url: `/api/v1/superadmin/public-easybuy-requests${suffix}`,
+          suppressErrorToast: true,
+        };
+      },
+      providesTags: [{ type: "PublicEasyBuyRequests", id: "LIST" }],
+    }),
+
+    approveSuperAdminPublicEasyBuyRequest: builder.mutation<
+      ApiSuccess<PublicEasyBuyRequest>,
+      { requestId: string; reason?: string }
+    >({
+      query: ({ requestId, reason }) => ({
+        url: `/api/v1/superadmin/public-easybuy-requests/${encodeURIComponent(requestId)}/approve`,
+        method: "PATCH",
+        body: { reason: reason || "" },
+        suppressGlobalLoader: true,
+      }),
+      invalidatesTags: [{ type: "PublicEasyBuyRequests", id: "LIST" }],
+    }),
+
+    rejectSuperAdminPublicEasyBuyRequest: builder.mutation<
+      ApiSuccess<PublicEasyBuyRequest>,
+      { requestId: string; reason: string }
+    >({
+      query: ({ requestId, reason }) => ({
+        url: `/api/v1/superadmin/public-easybuy-requests/${encodeURIComponent(requestId)}/reject`,
+        method: "PATCH",
+        body: { reason },
+        suppressGlobalLoader: true,
+      }),
+      invalidatesTags: [{ type: "PublicEasyBuyRequests", id: "LIST" }],
+    }),
+
+    convertSuperAdminPublicEasyBuyRequest: builder.mutation<
+      ApiSuccess,
+      {
+        requestId: string;
+        userEmail?: string;
+        phonePrice: number;
+        downPayment?: number;
+        monthlyPlan?: number;
+        weeklyPlan?: number;
+        reason?: string;
+      }
+    >({
+      query: ({ requestId, ...body }) => ({
+        url: `/api/v1/superadmin/public-easybuy-requests/${encodeURIComponent(requestId)}/convert`,
+        method: "POST",
+        body,
+        suppressGlobalLoader: true,
+      }),
+      invalidatesTags: [{ type: "PublicEasyBuyRequests", id: "LIST" }, { type: "Items", id: "LIST" }],
+    }),
   }),
 });
 
@@ -286,13 +400,17 @@ export const {
   useGetCurrentUserQuery,
   useGetDashboardQuery,
   useGetEasyBoughtItemsQuery,
+  useGetEasyBuyCatalogQuery,
   useGetMyReceiptsQuery,
   useUploadReceiptMutation,
   useGetPendingReceiptsQuery,
   useApproveReceiptMutation,
+  useRejectReceiptMutation,
   useGetSuperAdminLoginStatsQuery,
   useGetSuperAdminUsersQuery,
   useGetSuperAdminUsersWithItemsQuery,
+  useGetSuperAdminEasyBuyPricingQuery,
+  useUpdateSuperAdminEasyBuyPricingMutation,
   useDeleteSuperAdminUserMutation,
   useLazyPreviewReceiptUploadedDateQuery,
   useUpdateReceiptUploadedDateMutation,
@@ -300,5 +418,9 @@ export const {
   useUpdateUserNextDueDateMutation,
   useLazyPreviewEasyBoughtItemCreatedDateQuery,
   useUpdateEasyBoughtItemCreatedDateMutation,
+  useGetSuperAdminPublicEasyBuyRequestsQuery,
+  useApproveSuperAdminPublicEasyBuyRequestMutation,
+  useRejectSuperAdminPublicEasyBuyRequestMutation,
+  useConvertSuperAdminPublicEasyBuyRequestMutation,
 } = backendApi;
 

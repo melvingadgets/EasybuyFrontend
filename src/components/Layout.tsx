@@ -3,6 +3,8 @@ import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { auth } from "../lib/auth";
 import { useEffect, useState } from "react";
 import { GlobalLoadingOverlay } from "./GlobalLoadingOverlay";
+import { useAppDispatch } from "../store/hooks";
+import { backendApi } from "../store/api/backendApi";
 import {
   FaBars,
   FaBoxOpen,
@@ -43,11 +45,14 @@ const navItems = [
   { to: "/items", label: "EasyBought Items", icon: FaBoxOpen, authOnly: true, roles: ["User"] },
   { to: "/create-item", label: "Create Item", icon: FaPlusSquare, authOnly: true, roles: ["Admin"] },
   { to: "/superadmin", label: "Super Admin", icon: FaUserCog, authOnly: true, roles: ["SuperAdmin"] },
+  { to: "/superadmin/pricing", label: "Pricing", icon: FaBoxOpen, authOnly: true, roles: ["SuperAdmin"] },
+  { to: "/superadmin/public-requests", label: "Public Requests", icon: FaReceipt, authOnly: true, roles: ["SuperAdmin"] },
 ] as NavItem[];
 
 export const Layout = () => {
   const [open, setOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const isLoggedIn = auth.isLoggedIn();
   const role = auth.getRole();
@@ -69,7 +74,8 @@ export const Layout = () => {
 
   const onLogout = () => {
     auth.clearToken();
-    navigate("/login");
+    dispatch(backendApi.util.resetApiState());
+    navigate("/login", { replace: true });
   };
 
   const toggleTheme = () => {
