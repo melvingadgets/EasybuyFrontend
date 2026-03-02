@@ -6,6 +6,7 @@ import { api } from "../lib/api";
 import type { EasyBuyCatalogResponse } from "../types/api";
 
 type PlanType = "Monthly" | "Weekly";
+type PlanSelection = "" | PlanType;
 
 type PublicCatalogResponse = {
   message: string;
@@ -97,11 +98,11 @@ export const PublicEasyBuyRequestPage = () => {
     phone: "",
     iphoneModel: "",
     capacity: "",
-    plan: "Weekly" as PlanType,
+    plan: "" as PlanSelection,
     phonePrice: "",
     downPayment: "",
     monthlyPlan: "1",
-    weeklyPlan: "4",
+    weeklyPlan: "",
   });
 
   const selectedModel = useMemo(
@@ -119,7 +120,11 @@ export const PublicEasyBuyRequestPage = () => {
   }, [selectedModel, form.capacity]);
   const isWeeklyOnly =
     selectedModel?.allowedPlans.length === 1 && selectedModel.allowedPlans[0] === "Weekly";
-  const downPaymentMultiplier = (selectedModel?.downPaymentPercentage || 40) / 100;
+  const downPaymentPercentage = useMemo(() => {
+    const raw = Number(selectedModel?.downPaymentPercentage);
+    return Number.isFinite(raw) && raw > 0 ? raw : 0;
+  }, [selectedModel?.downPaymentPercentage]);
+  const downPaymentMultiplier = downPaymentPercentage / 100;
 
   useEffect(() => {
     let active = true;
@@ -143,10 +148,10 @@ export const PublicEasyBuyRequestPage = () => {
             ...prev,
             iphoneModel: first.model,
             capacity: firstCapacity,
-            plan: getSafePlan(first.allowedPlans[0] || "Weekly"),
+            plan: "",
             phonePrice: firstPrice > 0 ? formatInputWithCommas(String(firstPrice)) : "",
-            monthlyPlan: String(nextPlanRules?.monthlyDurations?.[0] || 1),
-            weeklyPlan: String(nextPlanRules?.weeklyDurations?.[0] || 4),
+            monthlyPlan: "",
+            weeklyPlan: "",
           }));
         }
       } catch (_error) {
@@ -169,12 +174,12 @@ export const PublicEasyBuyRequestPage = () => {
     setForm((prev) => {
       let next = prev;
 
-      if (!planRules.monthlyDurations.includes(Number(next.monthlyPlan))) {
-        next = { ...next, monthlyPlan: String(planRules.monthlyDurations[0] || 1) };
+      if (next.monthlyPlan && !planRules.monthlyDurations.includes(Number(next.monthlyPlan))) {
+        next = { ...next, monthlyPlan: "" };
       }
 
-      if (!planRules.weeklyDurations.includes(Number(next.weeklyPlan))) {
-        next = { ...next, weeklyPlan: String(planRules.weeklyDurations[0] || 4) };
+      if (next.weeklyPlan && !planRules.weeklyDurations.includes(Number(next.weeklyPlan))) {
+        next = { ...next, weeklyPlan: "" };
       }
 
       return next;
@@ -186,8 +191,10 @@ export const PublicEasyBuyRequestPage = () => {
 
     setForm((prev) => {
       let next = prev;
-      if (!selectedModel.allowedPlans.includes(prev.plan)) {
-        next = { ...next, plan: getSafePlan(selectedModel.allowedPlans[0] || "Weekly") };
+      const hasValidPlan =
+        !!prev.plan && selectedModel.allowedPlans.includes(prev.plan as PlanType);
+      if (!hasValidPlan) {
+        next = { ...next, plan: "" };
       }
       if (!selectedModel.capacities.includes(next.capacity)) {
         next = { ...next, capacity: selectedModel.capacities[0] || "" };
@@ -268,9 +275,11 @@ export const PublicEasyBuyRequestPage = () => {
   );
 
   const calculatedNextPayment = useMemo(() => {
-    const resolvedPlan = selectedModel?.allowedPlans.includes(form.plan)
-      ? form.plan
-      : selectedModel?.allowedPlans[0] || "Weekly";
+    const resolvedPlan = selectedModel?.allowedPlans.includes(form.plan as PlanType)
+      ? (form.plan as PlanType)
+      : "";
+
+    if (!resolvedPlan) return 0;
 
     if (resolvedPlan === "Monthly") {
       const months = Number(form.monthlyPlan) || 0;
@@ -295,6 +304,14 @@ export const PublicEasyBuyRequestPage = () => {
       toast.error("Select a valid device capacity");
       return;
     }
+    if (!form.plan || !selectedModel.allowedPlans.includes(form.plan as PlanType)) {
+      toast.error("Select a valid plan type");
+      return;
+    }
+    if (form.plan === "Weekly" && !form.weeklyPlan) {
+      toast.error("Select a weekly plan duration");
+      return;
+    }
     if (phonePriceNumber <= 0) {
       toast.error("Enter a valid phone price greater than zero");
       return;
@@ -313,9 +330,7 @@ export const PublicEasyBuyRequestPage = () => {
     setSubmitting(true);
     try {
       const urlParams = new URLSearchParams(window.location.search);
-      const resolvedPlan = selectedModel.allowedPlans.includes(form.plan)
-        ? form.plan
-        : selectedModel.allowedPlans[0] || "Weekly";
+      const resolvedPlan = form.plan;
       const payload = {
         fullName: form.fullName.trim(),
         email: form.email.trim().toLowerCase(),
@@ -362,11 +377,11 @@ export const PublicEasyBuyRequestPage = () => {
           phone: "",
           iphoneModel: first.model,
           capacity: firstCapacity,
-          plan: getSafePlan(first.allowedPlans[0] || "Weekly"),
+          plan: "",
           phonePrice: firstPrice > 0 ? formatInputWithCommas(String(firstPrice)) : "",
           downPayment: "",
-          monthlyPlan: String(planRules?.monthlyDurations?.[0] || 1),
-          weeklyPlan: String(planRules?.weeklyDurations?.[0] || 4),
+          monthlyPlan: "",
+          weeklyPlan: "",
         });
       } else {
         setForm({
@@ -375,11 +390,11 @@ export const PublicEasyBuyRequestPage = () => {
           phone: "",
           iphoneModel: "",
           capacity: "",
-          plan: "Weekly",
+          plan: "",
           phonePrice: "",
           downPayment: "",
-          monthlyPlan: "1",
-          weeklyPlan: "4",
+          monthlyPlan: "",
+          weeklyPlan: "",
         });
       }
       setDownPaymentTouched(false);
@@ -497,12 +512,20 @@ export const PublicEasyBuyRequestPage = () => {
             </label>
             <select
               id="plan-type"
-              className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className={`w-full rounded-md border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${
+                form.plan ? "border-input focus:ring-ring" : "border-red-500 focus:ring-red-500"
+              }`}
               value={form.plan}
-              onChange={(e) => setForm((prev) => ({ ...prev, plan: getSafePlan(e.target.value) }))}
-              disabled={!selectedModel || isWeeklyOnly}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  plan: e.target.value ? getSafePlan(e.target.value) : "",
+                }))
+              }
+              disabled={!selectedModel}
               required
             >
+              <option value="">Select plan type</option>
               {selectedModel?.allowedPlans.map((plan) => (
                 <option key={plan} value={plan}>
                   {plan}
@@ -558,8 +581,7 @@ export const PublicEasyBuyRequestPage = () => {
               required
             />
             <p className="text-xs text-muted-foreground">
-              Minimum required: {formatAmount(minimumRequiredDownPayment)} ({downPaymentMultiplier * 100}% of phone
-              price)
+              Minimum required: {formatAmount(minimumRequiredDownPayment)} ({downPaymentPercentage}% of phone price)
             </p>
             {downPaymentTooLow && (
               <p className="text-xs text-amber-600 dark:text-amber-300">
@@ -614,6 +636,7 @@ export const PublicEasyBuyRequestPage = () => {
                 onChange={(e) => setForm((prev) => ({ ...prev, monthlyPlan: e.target.value }))}
                 required
               >
+                <option value="">Select monthly duration</option>
                 {monthlyDurations.map((months) => (
                   <option key={months} value={months}>
                     {months} {months === 1 ? "Month" : "Months"}
@@ -621,18 +644,21 @@ export const PublicEasyBuyRequestPage = () => {
                 ))}
               </select>
             </div>
-          ) : (
+          ) : form.plan === "Weekly" ? (
             <div className="space-y-2">
               <label htmlFor="weekly-plan" className="text-sm font-medium">
                 Weekly Plan Duration
               </label>
               <select
                 id="weekly-plan"
-                className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className={`w-full rounded-md border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${
+                  form.weeklyPlan ? "border-input focus:ring-ring" : "border-red-500 focus:ring-red-500"
+                }`}
                 value={form.weeklyPlan}
                 onChange={(e) => setForm((prev) => ({ ...prev, weeklyPlan: e.target.value }))}
                 required
               >
+                <option value="">Select weekly duration</option>
                 {weeklyDurations.map((weeks) => (
                   <option key={weeks} value={weeks}>
                     {weeks} Weeks
@@ -640,7 +666,7 @@ export const PublicEasyBuyRequestPage = () => {
                 ))}
               </select>
             </div>
-          )}
+          ) : null}
 
           <div className="space-y-2 md:col-span-2">
             <label htmlFor="full-name" className="text-sm font-medium">
@@ -690,6 +716,8 @@ export const PublicEasyBuyRequestPage = () => {
               loadingCatalog ||
               !selectedModel ||
               !form.capacity ||
+              !form.plan ||
+              (form.plan === "Weekly" && !form.weeklyPlan) ||
               phonePriceNumber <= 0 ||
               invalidDownPayment
             }

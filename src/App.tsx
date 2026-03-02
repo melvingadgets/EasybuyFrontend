@@ -19,60 +19,64 @@ import { PublicEasyBuyVerifyPage } from "./pages/PublicEasyBuyVerifyPage";
 import { SuperAdminPublicRequestsPage } from "./pages/SuperAdminPublicRequestsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ForbiddenPage } from "./pages/ForbiddenPage";
+import { GlobalLoadingOverlay } from "./components/GlobalLoadingOverlay";
 
 const App = () => {
   return (
-    <Routes>
-      <Route path="/apply" element={<PublicEasyBuyRequestPage />} />
-      <Route path="/apply/verify" element={<PublicEasyBuyVerifyPage />} />
+    <>
+      <GlobalLoadingOverlay minDurationMs={150} />
+      <Routes>
+        <Route path="/apply" element={<PublicEasyBuyRequestPage />} />
+        <Route path="/apply/verify" element={<PublicEasyBuyVerifyPage />} />
 
-      <Route element={<Layout />}>
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route element={<Layout />}>
+          <Route path="/" element={<Navigate to="/login" replace />} />
 
-        <Route element={<PublicOnlyRoute />}>
-          <Route path="/login" element={<LoginPage />} />
+          <Route element={<PublicOnlyRoute />}>
+            <Route path="/login" element={<LoginPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute allowedRoles={["User"]} />}>
+            <Route path="/items" element={<ItemsPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute allowedRoles={["User"]} />}>
+            <Route path="/receipts" element={<ReceiptUploadPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute allowedRoles={["SuperAdmin"]} />}>
+            <Route path="/register" element={<RegisterPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
+            <Route path="/create-user" element={<CreateUserPage />} />
+            <Route path="/create-item" element={<CreateItemPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute allowedRoles={["SuperAdmin"]} />}>
+            <Route path="/receipt-approvals" element={<AdminReceiptApprovalsPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute allowedRoles={["SuperAdmin"]} />}>
+            <Route path="/superadmin" element={<SuperAdminPage />} />
+            <Route path="/superadmin/pricing" element={<SuperAdminPricingPage />} />
+            <Route path="/superadmin/public-requests" element={<SuperAdminPublicRequestsPage />} />
+            <Route path="/superadmin/date-maintenance" element={<SuperAdminDateMaintenancePage />} />
+          </Route>
+
+          <Route path="/users" element={<Navigate to="/404" replace />} />
+
+          <Route path="/403" element={<ForbiddenPage />} />
+          <Route path="/404" element={<NotFoundPage />} />
+          <Route path="*" element={<Navigate to="/404" replace />} />
         </Route>
-
-        <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-        </Route>
-
-        <Route element={<ProtectedRoute allowedRoles={["User"]} />}>
-          <Route path="/items" element={<ItemsPage />} />
-        </Route>
-
-        <Route element={<ProtectedRoute allowedRoles={["User"]} />}>
-          <Route path="/receipts" element={<ReceiptUploadPage />} />
-        </Route>
-
-        <Route element={<ProtectedRoute allowedRoles={["SuperAdmin"]} />}>
-          <Route path="/register" element={<RegisterPage />} />
-        </Route>
-
-        <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
-          <Route path="/create-user" element={<CreateUserPage />} />
-          <Route path="/create-item" element={<CreateItemPage />} />
-        </Route>
-
-        <Route element={<ProtectedRoute allowedRoles={["SuperAdmin"]} />}>
-          <Route path="/receipt-approvals" element={<AdminReceiptApprovalsPage />} />
-        </Route>
-
-        <Route element={<ProtectedRoute allowedRoles={["SuperAdmin"]} />}>
-          <Route path="/superadmin" element={<SuperAdminPage />} />
-          <Route path="/superadmin/pricing" element={<SuperAdminPricingPage />} />
-          <Route path="/superadmin/public-requests" element={<SuperAdminPublicRequestsPage />} />
-          <Route path="/superadmin/date-maintenance" element={<SuperAdminDateMaintenancePage />} />
-        </Route>
-
-        <Route path="/users" element={<Navigate to="/404" replace />} />
-
-        <Route path="/403" element={<ForbiddenPage />} />
-        <Route path="/404" element={<NotFoundPage />} />
-        <Route path="*" element={<Navigate to="/404" replace />} />
-      </Route>
-    </Routes>
+      </Routes>
+    </>
   );
 };
 

@@ -2,7 +2,6 @@ import type { IconType } from "react-icons";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { auth } from "../lib/auth";
 import { useEffect, useState } from "react";
-import { GlobalLoadingOverlay } from "./GlobalLoadingOverlay";
 import { useAppDispatch } from "../store/hooks";
 import { backendApi } from "../store/api/backendApi";
 import {
@@ -124,7 +123,6 @@ export const Layout = () => {
 
   return (
     <div className="min-h-screen overflow-x-clip bg-background text-foreground">
-      <GlobalLoadingOverlay minDurationMs={150} />
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,_hsl(var(--accent))_0%,_transparent_55%)] dark:hidden" />
       {open && (
         <button
