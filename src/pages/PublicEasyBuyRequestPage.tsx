@@ -1,8 +1,9 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import ClipLoader from "react-spinners/ClipLoader";
 import { api } from "../lib/api";
+import { initializeTikTokPixel, trackTikTokEvent, trackTikTokPageView } from "../lib/tiktokPixel";
 import type { EasyBuyCatalogResponse } from "../types/api";
 
 type PlanType = "Monthly" | "Weekly";
@@ -80,6 +81,7 @@ const buildPublicWhatsAppUrl = (params: {
 };
 
 export const PublicEasyBuyRequestPage = () => {
+  const pixelPageTrackedRef = useRef(false);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [catalog, setCatalog] = useState<EasyBuyCatalogResponse["models"]>([]);
@@ -125,6 +127,13 @@ export const PublicEasyBuyRequestPage = () => {
     return Number.isFinite(raw) && raw > 0 ? raw : 0;
   }, [selectedModel?.downPaymentPercentage]);
   const downPaymentMultiplier = downPaymentPercentage / 100;
+
+  useEffect(() => {
+    initializeTikTokPixel();
+    if (pixelPageTrackedRef.current) return;
+    trackTikTokPageView();
+    pixelPageTrackedRef.current = true;
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -366,6 +375,15 @@ export const PublicEasyBuyRequestPage = () => {
       );
       setContactAdminModalOpen(true);
       toast.success(response?.data?.message || "Request submitted. Check your email.");
+      trackTikTokEvent("SubmitForm", {
+        content_type: "product",
+        content_name: payload.iphoneModel,
+        plan: payload.plan,
+        capacity: payload.capacity,
+        currency: "NGN",
+        value: Number.isFinite(phonePriceNumber) ? phonePriceNumber : 0,
+        request_status: String(response?.data?.data?.status || "pending_verification"),
+      });
 
       if (catalog.length) {
         const first = catalog[0];
