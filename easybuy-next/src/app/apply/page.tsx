@@ -664,7 +664,7 @@ export default function ApplyPage() {
 
             <div className="mt-3 flex flex-wrap gap-2">
               {contactAdminWhatsAppUrl ? (
-                <a href={contactAdminWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60">Contact Melvin Gadgets on WhatsApp</a>
+                <a href={contactAdminWhatsAppUrl} className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60">Contact Melvin Gadgets on WhatsApp</a>
               ) : null}
 
             </div>
@@ -706,7 +706,7 @@ export default function ApplyPage() {
                 Close
               </button>
               {contactAdminWhatsAppUrl ? (
-                <a href={contactAdminWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-base font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60">Contact Melvin Gadgets on WhatsApp</a>
+                <a href={contactAdminWhatsAppUrl} className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-base font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60">Contact Melvin Gadgets on WhatsApp</a>
               ) : null}
             </div>
           </div>
@@ -715,6 +715,7 @@ export default function ApplyPage() {
     </div>
   );
 }
+
 
 
 

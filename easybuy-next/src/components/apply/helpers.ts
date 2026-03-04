@@ -65,5 +65,6 @@ export const buildPublicWhatsAppUrl = (params: {
     `Plan: ${params.plan}`,
   ].join("\n");
 
-  return `https://wa.me/${PUBLIC_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+  return `https://api.whatsapp.com/send?phone=${PUBLIC_WHATSAPP_NUMBER}&text=${encodeURIComponent(message)}`;
 };
+
