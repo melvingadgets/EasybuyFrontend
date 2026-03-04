@@ -91,7 +91,6 @@ export const PublicEasyBuyRequestPage = () => {
   const [resending, setResending] = useState(false);
   const [contactAdminModalOpen, setContactAdminModalOpen] = useState(false);
   const [contactAdminWhatsAppUrl, setContactAdminWhatsAppUrl] = useState("");
-  const [openingWhatsApp, setOpeningWhatsApp] = useState(false);
   const [downPaymentTouched, setDownPaymentTouched] = useState(false);
   const [previewUnavailable, setPreviewUnavailable] = useState(false);
   const [form, setForm] = useState({
@@ -446,14 +445,7 @@ export const PublicEasyBuyRequestPage = () => {
     }
   };
 
-  const openContactAdminWhatsApp = () => {
-    if (!contactAdminWhatsAppUrl || openingWhatsApp) return;
-    setOpeningWhatsApp(true);
-    window.open(contactAdminWhatsAppUrl, "_blank", "noopener,noreferrer");
-    window.setTimeout(() => setOpeningWhatsApp(false), 600);
-  };
-
-  return (
+    return (
     <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-10 md:px-6">
       <section className="rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-soft">
         <h1 className="text-xl font-semibold">Create EasyBuy Request</h1>
@@ -759,21 +751,7 @@ export const PublicEasyBuyRequestPage = () => {
               Check your email and click the verification link to continue.
             </p>
             {contactAdminWhatsAppUrl && (
-              <button
-                type="button"
-                onClick={openContactAdminWhatsApp}
-                disabled={openingWhatsApp}
-                className="mt-3 inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
-              >
-                {openingWhatsApp ? (
-                  <>
-                    <ClipLoader color="hsl(var(--primary-foreground))" size={16} speedMultiplier={0.9} />
-                    Opening WhatsApp...
-                  </>
-                ) : (
-                  "Contact Admin on WhatsApp"
-                )}
-              </button>
+              <a href={contactAdminWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60">Contact Admin on WhatsApp</a>
             )}
             <button
               type="button"
@@ -818,21 +796,7 @@ export const PublicEasyBuyRequestPage = () => {
                 Close
               </button>
               {contactAdminWhatsAppUrl && (
-                <button
-                  type="button"
-                  onClick={openContactAdminWhatsApp}
-                  disabled={openingWhatsApp}
-                  className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
-                >
-                  {openingWhatsApp ? (
-                    <>
-                      <ClipLoader color="hsl(var(--primary-foreground))" size={16} speedMultiplier={0.9} />
-                      Opening WhatsApp...
-                    </>
-                  ) : (
-                    "Contact Admin on WhatsApp"
-                  )}
-                </button>
+                <a href={contactAdminWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60">Contact Admin on WhatsApp</a>
               )}
             </div>
           </div>
@@ -841,3 +805,4 @@ export const PublicEasyBuyRequestPage = () => {
     </div>
   );
 };
+

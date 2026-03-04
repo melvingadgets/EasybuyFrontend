@@ -13,7 +13,6 @@ export const PublicEasyBuyVerifyPage = () => {
   const [state, setState] = useState<VerifyState>("loading");
   const [whatsappUrl, setWhatsappUrl] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [openingWhatsApp, setOpeningWhatsApp] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -52,14 +51,7 @@ export const PublicEasyBuyVerifyPage = () => {
     };
   }, [token]);
 
-  const openContactAdminWhatsApp = () => {
-    if (!whatsappUrl || openingWhatsApp) return;
-    setOpeningWhatsApp(true);
-    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-    window.setTimeout(() => setOpeningWhatsApp(false), 600);
-  };
-
-  return (
+    return (
     <div className="mx-auto w-full max-w-xl px-4 py-16 md:px-6">
       <section className="rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-soft">
         {state === "loading" && (
@@ -76,21 +68,7 @@ export const PublicEasyBuyVerifyPage = () => {
               Your EasyBuy request is now verified and ready for SuperAdmin review.
             </p>
             {whatsappUrl && (
-              <button
-                type="button"
-                onClick={openContactAdminWhatsApp}
-                disabled={openingWhatsApp}
-                className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
-              >
-                {openingWhatsApp ? (
-                  <>
-                    <ClipLoader color="hsl(var(--primary-foreground))" size={16} speedMultiplier={0.9} />
-                    Opening WhatsApp...
-                  </>
-                ) : (
-                  "Contact Admin on WhatsApp"
-                )}
-              </button>
+              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60">Contact Admin on WhatsApp</a>
             )}
           </div>
         )}
@@ -111,3 +89,4 @@ export const PublicEasyBuyVerifyPage = () => {
     </div>
   );
 };
+

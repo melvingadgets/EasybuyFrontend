@@ -62,7 +62,6 @@ export default function ApplyPage() {
 
   const [contactAdminModalOpen, setContactAdminModalOpen] = useState(false);
   const [contactAdminWhatsAppUrl, setContactAdminWhatsAppUrl] = useState("");
-  const [openingWhatsApp, setOpeningWhatsApp] = useState(false);
 
   const [downPaymentTouched, setDownPaymentTouched] = useState(false);
   const [previewUnavailable, setPreviewUnavailable] = useState(false);
@@ -544,15 +543,7 @@ export default function ApplyPage() {
   };
 
 
-  const openContactAdminWhatsApp = () => {
-    if (!contactAdminWhatsAppUrl || openingWhatsApp) return;
-
-    setOpeningWhatsApp(true);
-    window.open(contactAdminWhatsAppUrl, "_blank", "noopener,noreferrer");
-    window.setTimeout(() => setOpeningWhatsApp(false), 600);
-  };
-
-
+  
   const stepView = useMemo(() => {
     if (step === 1) {
       return <StepOneBasicInfo form={form} errors={basicErrors} onChange={setField} />;
@@ -673,21 +664,7 @@ export default function ApplyPage() {
 
             <div className="mt-3 flex flex-wrap gap-2">
               {contactAdminWhatsAppUrl ? (
-                <button
-                  type="button"
-                  onClick={openContactAdminWhatsApp}
-                  disabled={openingWhatsApp}
-                  className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
-                >
-                  {openingWhatsApp ? (
-                    <>
-                      <ClipLoader color="hsl(var(--primary-foreground))" size={14} speedMultiplier={0.9} />
-                      Opening WhatsApp...
-                    </>
-                  ) : (
-                    "Contact Melvin Gadgets on WhatsApp"
-                  )}
-                </button>
+                <a href={contactAdminWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60">Contact Melvin Gadgets on WhatsApp</a>
               ) : null}
 
             </div>
@@ -729,21 +706,7 @@ export default function ApplyPage() {
                 Close
               </button>
               {contactAdminWhatsAppUrl ? (
-                <button
-                  type="button"
-                  onClick={openContactAdminWhatsApp}
-                  disabled={openingWhatsApp}
-                  className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-base font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
-                >
-                  {openingWhatsApp ? (
-                    <>
-                      <ClipLoader color="hsl(var(--primary-foreground))" size={16} speedMultiplier={0.9} />
-                      Opening WhatsApp...
-                    </>
-                  ) : (
-                    "Contact Melvin Gadgets on WhatsApp"
-                  )}
-                </button>
+                <a href={contactAdminWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-base font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60">Contact Melvin Gadgets on WhatsApp</a>
               ) : null}
             </div>
           </div>
@@ -752,6 +715,7 @@ export default function ApplyPage() {
     </div>
   );
 }
+
 
 
 
