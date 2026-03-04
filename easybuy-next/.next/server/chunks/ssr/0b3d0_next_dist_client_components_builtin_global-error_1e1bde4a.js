@@ -1,0 +1,3 @@
+module.exports=[66112,(a,b,c)=>{let{createClientModuleProxy:d}=a.r(99220);a.n(d("[project]/easybuy-next/node_modules/next/dist/client/components/builtin/global-error.js <module evaluation>"))},411,(a,b,c)=>{let{createClientModuleProxy:d}=a.r(99220);a.n(d("[project]/easybuy-next/node_modules/next/dist/client/components/builtin/global-error.js"))},70219,a=>{"use strict";a.i(66112);var b=a.i(411);a.n(b)}];
+
+//# sourceMappingURL=0b3d0_next_dist_client_components_builtin_global-error_1e1bde4a.js.map

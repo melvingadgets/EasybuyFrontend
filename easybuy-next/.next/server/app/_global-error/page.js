@@ -1,0 +1,10 @@
+var R=require("../../chunks/ssr/[turbopack]_runtime.js")("server/app/_global-error/page.js")
+R.c("server/chunks/ssr/[root-of-the-server]__371aae59._.js")
+R.c("server/chunks/ssr/0b3d0_next_dist_f6958522._.js")
+R.c("server/chunks/ssr/0b3d0_next_dist_1dec3705._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__b2e4d4a0._.js")
+R.c("server/chunks/ssr/0b3d0_next_dist_50ad6bfd._.js")
+R.c("server/chunks/ssr/0b3d0_next_dist_f0037576._.js")
+R.c("server/chunks/ssr/easybuy-next__next-internal_server_app__global-error_page_actions_1ecbf5e2.js")
+R.m(93720)
+module.exports=R.m(93720).exports
