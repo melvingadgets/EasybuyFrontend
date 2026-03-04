@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import BounceLoader from "react-spinners/BounceLoader";
-import loaderImage from "../assets/spinner.png";
+import loaderImage from "../IMG_1938 (1).png";
 
 type BlurLoadingContainerProps = {
   loading: boolean;
