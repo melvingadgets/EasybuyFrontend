@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import previewImage from "@/IMG_1938 (1).png";
 
 const APPLY_TITLE = "IPHONE EASYBUY APPLICATION FORM";
 const APPLY_DESCRIPTION =
   "Apply for iPhone EasyBuy in Nigeria. Choose your model and capacity, pick a payment plan, and get quick WhatsApp support.";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://aurapaytracker.vercel.app";
+const PREVIEW_IMAGE_URL = `${SITE_URL}/icon.png`;
 
 export const metadata: Metadata = {
   title: APPLY_TITLE,
@@ -20,9 +21,9 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: previewImage.src,
-        width: previewImage.width,
-        height: previewImage.height,
+        url: PREVIEW_IMAGE_URL,
+        width: 500,
+        height: 500,
         alt: "Melvin Gadgets iPhone EasyBuy application form",
       },
     ],
@@ -31,7 +32,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: APPLY_TITLE,
     description: APPLY_DESCRIPTION,
-    images: [previewImage.src],
+    images: [PREVIEW_IMAGE_URL],
   },
 };
 
