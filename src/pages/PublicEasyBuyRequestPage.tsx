@@ -77,7 +77,7 @@ const buildPublicWhatsAppUrl = (params: {
     `Plan: ${params.plan}`,
   ].join("\n");
 
-  return `https://wa.me/${PUBLIC_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+  return `https://api.whatsapp.com/send?phone=${PUBLIC_WHATSAPP_NUMBER}&text=${encodeURIComponent(message)}`;
 };
 
 export const PublicEasyBuyRequestPage = () => {
@@ -751,7 +751,7 @@ export const PublicEasyBuyRequestPage = () => {
               Check your email and click the verification link to continue.
             </p>
             {contactAdminWhatsAppUrl && (
-              <a href={contactAdminWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60">Contact Admin on WhatsApp</a>
+              <a href={contactAdminWhatsAppUrl} className="mt-3 inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60">Contact Admin on WhatsApp</a>
             )}
             <button
               type="button"
@@ -796,7 +796,7 @@ export const PublicEasyBuyRequestPage = () => {
                 Close
               </button>
               {contactAdminWhatsAppUrl && (
-                <a href={contactAdminWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60">Contact Admin on WhatsApp</a>
+                <a href={contactAdminWhatsAppUrl} className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60">Contact Admin on WhatsApp</a>
               )}
             </div>
           </div>
@@ -805,4 +805,5 @@ export const PublicEasyBuyRequestPage = () => {
     </div>
   );
 };
+
 

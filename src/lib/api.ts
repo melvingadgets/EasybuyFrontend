@@ -16,14 +16,38 @@ const stopGlobalLoad = (config?: RequestMeta) => {
   }
 };
 
-const apiMode = String(import.meta.env.VITE_API_MODE || "local").trim().toLowerCase();
+const apiMode = String(import.meta.env.VITE_API_MODE || "online").trim().toLowerCase();
 const envBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 const localUrl = String(import.meta.env.VITE_API_LOCAL_URL || "http://localhost:552").trim();
 const onlineUrl = String(
   import.meta.env.VITE_API_ONLINE_URL || "https://easybuytrackerbackend.onrender.com"
 ).trim();
+const onlineFallbackUrl = "https://easybuytrackerbackend.onrender.com";
 
-const baseURL = envBaseUrl || (apiMode === "online" ? onlineUrl : localUrl);
+const isLocalhostUrl = (value: string) => {
+  const normalized = String(value || "").trim().toLowerCase();
+  return normalized.includes("localhost") || normalized.includes("127.0.0.1");
+};
+
+const shouldAvoidLocalhostBase =
+  typeof window !== "undefined" &&
+  window.location.hostname !== "localhost" &&
+  window.location.hostname !== "127.0.0.1";
+const isRuntimeLocalhost =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+const selectedBaseURL =
+  envBaseUrl ||
+  (apiMode === "local"
+    ? localUrl || onlineUrl || onlineFallbackUrl
+    : onlineUrl || localUrl || onlineFallbackUrl);
+
+const baseURL = isRuntimeLocalhost
+  ? selectedBaseURL
+  : shouldAvoidLocalhostBase && isLocalhostUrl(selectedBaseURL)
+    ? onlineUrl || onlineFallbackUrl
+    : onlineUrl || onlineFallbackUrl;
 
 export const api = axios.create({
   baseURL
