@@ -26,15 +26,17 @@ const shouldSuppressBackgroundEmailToast = (message: string): boolean => {
   );
 };
 
-const API_MODE = String(process.env.NEXT_PUBLIC_API_MODE || "local").trim().toLowerCase();
+const API_MODE = String(process.env.NEXT_PUBLIC_API_MODE || "online").trim().toLowerCase();
 const LOCAL_API_URL = String(process.env.NEXT_PUBLIC_API_LOCAL_URL || "http://localhost:552").trim();
-const ONLINE_API_URL = String(process.env.NEXT_PUBLIC_API_ONLINE_URL || "").trim();
+const ONLINE_API_URL = String(
+  process.env.NEXT_PUBLIC_API_ONLINE_URL || "https://easybuytrackerbackend.onrender.com"
+).trim();
 const LEGACY_BASE_URL = String(process.env.NEXT_PUBLIC_API_BASE_URL || "").trim();
 
 const baseURL =
-  API_MODE === "online"
-    ? ONLINE_API_URL || LEGACY_BASE_URL || LOCAL_API_URL
-    : LOCAL_API_URL || LEGACY_BASE_URL || "http://localhost:552";
+  API_MODE === "local"
+    ? LOCAL_API_URL || ONLINE_API_URL || LEGACY_BASE_URL || "http://localhost:552"
+    : ONLINE_API_URL || LEGACY_BASE_URL || LOCAL_API_URL || "https://easybuytrackerbackend.onrender.com";
 
 export const api = axios.create({
   baseURL,
