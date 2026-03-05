@@ -51,6 +51,7 @@ export default function ApplyPage() {
   const pixelPageTrackedRef = useRef(false);
   const [draftReady, setDraftReady] = useState(false);
   const [step, setStep] = useState<ApplyStep>(1);
+  const [modelExplicitlySelected, setModelExplicitlySelected] = useState(false);
 
   const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -105,7 +106,21 @@ export default function ApplyPage() {
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed?.form && typeof parsed.form === "object") {
-          setForm({ ...initialFormState, ...parsed.form });
+          const isModelExplicit = Boolean(parsed?.modelExplicitlySelected);
+          const nextForm = { ...initialFormState, ...parsed.form } as ApplyFormState;
+
+          if (!isModelExplicit) {
+            nextForm.iphoneModel = "";
+            nextForm.capacity = "";
+            nextForm.plan = "";
+            nextForm.monthlyPlan = "";
+            nextForm.weeklyPlan = "";
+            nextForm.phonePrice = "";
+            nextForm.downPayment = "";
+          }
+
+          setForm(nextForm);
+          setModelExplicitlySelected(isModelExplicit);
         }
         if (parsed?.step) {
           setStep(normalizeStep(parsed.step));
@@ -195,9 +210,10 @@ export default function ApplyPage() {
       JSON.stringify({
         step,
         form,
+        modelExplicitlySelected,
       })
     );
-  }, [draftReady, form, step]);
+  }, [draftReady, form, modelExplicitlySelected, step]);
 
   useEffect(() => {
     if (!planRules) return;
@@ -531,6 +547,7 @@ export default function ApplyPage() {
       setBasicErrors({});
       setStep(1);
       setDownPaymentTouched(false);
+      setModelExplicitlySelected(false);
       localStorage.removeItem(DRAFT_KEY);
     } catch (error: any) {
       const statusCode = Number(error?.response?.status || 0);
@@ -588,6 +605,7 @@ export default function ApplyPage() {
           onFormChange={applyFormPatch}
           onModelChange={(model) => {
             setPreviewUnavailable(false);
+            setModelExplicitlySelected(Boolean(model));
             applyFormPatch({ iphoneModel: model, plan: "", monthlyPlan: "", weeklyPlan: "" });
           }}
           onPhonePriceChange={(value) => applyFormPatch({ phonePrice: formatInputWithCommas(value) })}
