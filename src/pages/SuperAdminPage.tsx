@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import ClipLoader from "react-spinners/ClipLoader";
+import { Link } from "react-router-dom";
 import { BlurLoadingContainer } from "../components/BlurLoadingContainer";
+import { MobileField } from "../components/superadmin/MobileField";
 import { getRtkErrorMessage } from "../lib/rtkError";
+import { formatCurrency } from "../lib/superadminFormat";
 import {
   useDeleteSuperAdminUserMutation,
   useGetSuperAdminLoginStatsQuery,
@@ -10,14 +13,6 @@ import {
   useGetSuperAdminUsersWithItemsQuery,
 } from "../store/api/backendApi";
 import type { SuperAdminLoginStats, SuperAdminUser } from "../types/api";
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "NGN",
-  maximumFractionDigits: 2,
-});
-
-const formatCurrency = (value: number) => currencyFormatter.format(value || 0);
 
 const emptyStats: SuperAdminLoginStats = {
   usersLoggedIn: 0,
@@ -183,11 +178,105 @@ export const SuperAdminPage = () => {
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-soft">
+          <h2 className="text-lg font-semibold">Public EasyBuy Leads</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Review unsubmitted form drafts and follow up with abandoned leads.
+          </p>
+          <div className="mt-4">
+            <Link
+              to="/superadmin/abandoned-drafts"
+              className="inline-flex items-center rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:opacity-90"
+            >
+              View Abandoned Drafts
+            </Link>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-soft">
           <h2 className="text-lg font-semibold">All Users (With Creator Admin)</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Delete any User/Admin and capture an audit reason for traceability.
           </p>
-          <div className="mt-4 w-full max-w-full overflow-x-auto">
+          <div className="mt-4 space-y-3 md:hidden">
+            {users.map((user) => {
+              const isSuperAdmin = user.role === "SuperAdmin";
+              const creatorName = user.createdByAdmin?.fullName || "-";
+              const creatorEmail = user.createdByAdmin?.email || "-";
+              const isDeleting = deletingUserId === user._id;
+
+              return (
+                <article key={user._id} className="rounded-xl border border-border bg-background p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold">{user.fullName || "-"}</p>
+                      <p className="text-xs text-muted-foreground">{user.email || "-"}</p>
+                    </div>
+                    <span
+                      className={`rounded px-2 py-1 text-xs ${
+                        user.role === "Admin"
+                          ? "bg-primary/15 text-primary"
+                          : user.role === "SuperAdmin"
+                            ? "bg-success/15 text-success"
+                            : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {user.role}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 grid gap-3">
+                    <MobileField
+                      label="Created By"
+                      value={
+                        <>
+                          <p>{creatorName}</p>
+                          <p className="text-xs text-muted-foreground">{creatorEmail}</p>
+                        </>
+                      }
+                    />
+                  </div>
+
+                  <div className="mt-3">
+                    <input
+                      value={deleteReasonById[user._id] || ""}
+                      onChange={(event) =>
+                        setDeleteReasonById((prev) => ({
+                          ...prev,
+                          [user._id]: event.target.value,
+                        }))
+                      }
+                      className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      placeholder="Reason for audit log"
+                      disabled={isSuperAdmin || isDeleting}
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => deleteTarget(user)}
+                    disabled={isSuperAdmin || isDeleting}
+                    className="mt-3 flex w-full items-center justify-center gap-2 rounded-md bg-destructive px-3 py-2 text-xs text-destructive-foreground hover:opacity-90 disabled:opacity-50"
+                  >
+                    {isSuperAdmin ? (
+                      "Protected"
+                    ) : isDeleting ? (
+                      <>
+                        <ClipLoader color="hsl(var(--destructive-foreground))" size={14} speedMultiplier={0.9} />
+                        Deleting...
+                      </>
+                    ) : (
+                      "Delete"
+                    )}
+                  </button>
+                </article>
+              );
+            })}
+            {users.length === 0 && (
+              <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">No users found.</p>
+            )}
+          </div>
+
+          <div className="mt-4 hidden w-full max-w-full overflow-x-auto md:block">
             <table className="min-w-full divide-y divide-border rounded-lg border border-border">
               <thead className="bg-muted">
                 <tr>

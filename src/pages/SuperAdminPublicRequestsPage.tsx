@@ -2,7 +2,10 @@ import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import ClipLoader from "react-spinners/ClipLoader";
 import { BlurLoadingContainer } from "../components/BlurLoadingContainer";
+import { MobileField } from "../components/superadmin/MobileField";
+import { PublicRequestStatusBadge } from "../components/superadmin/PublicRequestStatusBadge";
 import { getRtkErrorMessage } from "../lib/rtkError";
+import { formatCurrency, formatDateTime } from "../lib/superadminFormat";
 import {
   useApproveSuperAdminPublicEasyBuyRequestMutation,
   useConvertSuperAdminPublicEasyBuyRequestMutation,
@@ -10,14 +13,6 @@ import {
   useRejectSuperAdminPublicEasyBuyRequestMutation,
 } from "../store/api/backendApi";
 import type { PublicEasyBuyRequest } from "../types/api";
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "NGN",
-  maximumFractionDigits: 2,
-});
-
-const formatCurrency = (value: number) => currencyFormatter.format(value || 0);
 
 const parseFormattedNumber = (value: string) => {
   const sanitized = String(value || "").replace(/[^\d.]/g, "");
@@ -35,21 +30,6 @@ const formatInputWithCommas = (value: string) => {
   const decimals = decimalRaw.slice(0, 2);
   if (hasTrailingDot && !decimals.length) return `${formattedInteger}.`;
   return decimals.length ? `${formattedInteger}.${decimals}` : formattedInteger;
-};
-
-const formatDateTime = (value?: string) => {
-  if (!value) return "-";
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "-";
-  return parsed.toLocaleString();
-};
-
-const statusStyles: Record<string, string> = {
-  pending_verification: "bg-amber-100 text-amber-700",
-  verified: "bg-blue-100 text-blue-700",
-  approved: "bg-emerald-100 text-emerald-700",
-  rejected: "bg-red-100 text-red-700",
-  converted: "bg-purple-100 text-purple-700",
 };
 
 export const SuperAdminPublicRequestsPage = () => {
@@ -154,7 +134,7 @@ export const SuperAdminPublicRequestsPage = () => {
   return (
     <BlurLoadingContainer loading={loading} minDurationMs={150}>
       <section className="space-y-5">
-        <div className="rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-soft">
+        <div className="rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-soft sm:p-6">
           <h1 className="text-xl font-semibold">Public EasyBuy Requests</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Review verified requests from public traffic and approve/reject/convert as SuperAdmin.
@@ -193,11 +173,113 @@ export const SuperAdminPublicRequestsPage = () => {
           )}
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-soft">
+        <div className="rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-soft sm:p-6">
           <div className="mb-3 text-xs text-muted-foreground">
             {pagination?.total !== undefined ? `Total: ${pagination.total}` : `Showing: ${requests.length}`}
           </div>
-          <div className="w-full overflow-x-auto">
+
+          <div className="space-y-3 md:hidden">
+            {requests.map((request) => {
+              const loadingAction = actionLoadingId === request.requestId;
+              const canReview = request.status === "verified";
+              const canConvert = request.status === "approved";
+
+              return (
+                <article key={request._id} className="rounded-xl border border-border bg-background p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold">{request.fullName || "-"}</p>
+                      <p className="text-xs text-muted-foreground">{request.email || "-"}</p>
+                    </div>
+                    <PublicRequestStatusBadge status={request.status} />
+                  </div>
+
+                  <div className="mt-3 grid gap-3">
+                    <MobileField
+                      label="Request"
+                      value={
+                        <>
+                          <p>{request.requestId}</p>
+                          <p className="text-xs text-muted-foreground">{formatDateTime(request.createdAt)}</p>
+                        </>
+                      }
+                    />
+                    <MobileField label="Phone" value={request.phone || "-"} />
+                    <MobileField
+                      label="Device"
+                      value={
+                        <>
+                          <p>{request.iphoneModel || "-"}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {request.capacity || "-"} | {request.plan || "-"}
+                          </p>
+                        </>
+                      }
+                    />
+                    {request.rejectionReason ? (
+                      <MobileField
+                        label="Rejection Reason"
+                        value={<span className="text-destructive">{request.rejectionReason}</span>}
+                      />
+                    ) : null}
+                  </div>
+
+                  <div className="mt-3">
+                    <input
+                      className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      value={reasonByRequestId[request.requestId] || ""}
+                      onChange={(event) =>
+                        setReasonByRequestId((prev) => ({
+                          ...prev,
+                          [request.requestId]: event.target.value,
+                        }))
+                      }
+                      placeholder="Reason (required for reject)"
+                      disabled={loadingAction}
+                    />
+                  </div>
+
+                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                    <button
+                      type="button"
+                      onClick={() => onApprove(request.requestId)}
+                      disabled={!canReview || loadingAction}
+                      className="rounded-md bg-primary px-3 py-2 text-xs text-primary-foreground hover:opacity-90 disabled:opacity-60"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onReject(request.requestId)}
+                      disabled={!canReview || loadingAction}
+                      className="rounded-md bg-destructive px-3 py-2 text-xs text-destructive-foreground hover:opacity-90 disabled:opacity-60"
+                    >
+                      Reject
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openConvertModal(request)}
+                      disabled={!canConvert || loadingAction}
+                      className="rounded-md border border-border bg-card px-3 py-2 text-xs hover:bg-muted disabled:opacity-60"
+                    >
+                      Convert
+                    </button>
+                  </div>
+
+                  {loadingAction && (
+                    <div className="mt-3 flex justify-end">
+                      <ClipLoader color="hsl(var(--primary))" size={14} speedMultiplier={0.9} />
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+            {requests.length === 0 && (
+              <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">No public requests found.</p>
+            )}
+          </div>
+
+          <div className="hidden w-full overflow-x-auto md:block">
             <table className="min-w-full divide-y divide-border rounded-lg border border-border">
               <thead className="bg-muted">
                 <tr>
@@ -228,13 +310,11 @@ export const SuperAdminPublicRequestsPage = () => {
                       <td className="px-3 py-2 text-sm">
                         <p>{request.iphoneModel}</p>
                         <p className="text-xs text-muted-foreground">
-                          {request.capacity} • {request.plan}
+                          {request.capacity} | {request.plan}
                         </p>
                       </td>
                       <td className="px-3 py-2 text-sm">
-                        <span className={`rounded px-2 py-1 text-xs ${statusStyles[request.status] || "bg-muted"}`}>
-                          {request.status}
-                        </span>
+                        <PublicRequestStatusBadge status={request.status} />
                         {request.rejectionReason && (
                           <p className="mt-1 text-xs text-destructive">Reason: {request.rejectionReason}</p>
                         )}
@@ -314,7 +394,7 @@ export const SuperAdminPublicRequestsPage = () => {
           <article className="w-full max-w-xl rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-soft">
             <h2 className="text-lg font-semibold">Convert Request</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              {convertModalRequest.requestId} • {convertModalRequest.iphoneModel} ({convertModalRequest.capacity})
+              {convertModalRequest.requestId} | {convertModalRequest.iphoneModel} ({convertModalRequest.capacity})
             </p>
 
             <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -394,7 +474,7 @@ export const SuperAdminPublicRequestsPage = () => {
               </div>
             </div>
 
-            <div className="mt-5 flex justify-end gap-2">
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button
                 type="button"
                 onClick={() => setConvertModalRequest(null)}
@@ -407,7 +487,7 @@ export const SuperAdminPublicRequestsPage = () => {
                 type="button"
                 onClick={submitConvert}
                 disabled={actionLoadingId === convertModalRequest.requestId}
-                className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-xs text-primary-foreground hover:opacity-90 disabled:opacity-60"
+                className="flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-xs text-primary-foreground hover:opacity-90 disabled:opacity-60"
               >
                 {actionLoadingId === convertModalRequest.requestId ? (
                   <>

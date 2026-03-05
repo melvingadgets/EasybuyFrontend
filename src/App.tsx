@@ -16,6 +16,7 @@ import { SuperAdminDateMaintenancePage } from "./pages/SuperAdminDateMaintenance
 import { SuperAdminPricingPage } from "./pages/SuperAdminPricingPage";
 import { PublicEasyBuyVerifyPage } from "./pages/PublicEasyBuyVerifyPage";
 import { SuperAdminPublicRequestsPage } from "./pages/SuperAdminPublicRequestsPage";
+import { SuperAdminAbandonedDraftsPage } from "./pages/SuperAdminAbandonedDraftsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ForbiddenPage } from "./pages/ForbiddenPage";
 import { GlobalLoadingOverlay } from "./components/GlobalLoadingOverlay";
@@ -94,6 +95,7 @@ const App = () => {
             <Route path="/superadmin" element={<SuperAdminPage />} />
             <Route path="/superadmin/pricing" element={<SuperAdminPricingPage />} />
             <Route path="/superadmin/public-requests" element={<SuperAdminPublicRequestsPage />} />
+            <Route path="/superadmin/abandoned-drafts" element={<SuperAdminAbandonedDraftsPage />} />
             <Route path="/superadmin/date-maintenance" element={<SuperAdminDateMaintenancePage />} />
           </Route>
 

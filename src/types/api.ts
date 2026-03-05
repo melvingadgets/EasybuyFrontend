@@ -228,6 +228,19 @@ export type PublicEasyBuyRequest = {
   updatedAt: string;
 };
 
+export type PublicEasyBuyAbandonedDraft = {
+  anonymousId: string;
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  iphoneModel?: string;
+  capacity?: string;
+  plan?: "Monthly" | "Weekly";
+  currentStep?: 1 | 2 | 3;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type PaginationMeta = {
   page: number;
   limit: number;

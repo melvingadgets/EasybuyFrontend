@@ -143,25 +143,35 @@ export default function ApplyPage() {
         setCatalog(models);
         setPlanRules(nextPlanRules);
 
-        if (models.length) {
-          setForm((prev) => {
-            const found = models.find((item) => item.model === prev.iphoneModel);
-            const model = found || models[0];
-            const nextCapacity = model.capacities.includes(prev.capacity) ? prev.capacity : model.capacities[0] || "";
-            const safePlan = prev.plan && model.allowedPlans.includes(prev.plan as PlanType) ? prev.plan : "";
-            const safePrice = Number(model.pricesByCapacity?.[nextCapacity] || 0);
-
+        setForm((prev) => {
+          const found = models.find((item) => item.model === prev.iphoneModel);
+          if (!found) {
             return {
               ...prev,
-              iphoneModel: model.model,
-              capacity: nextCapacity,
-              plan: safePlan,
-              monthlyPlan: safePlan === "Monthly" ? prev.monthlyPlan : "",
-              weeklyPlan: safePlan === "Weekly" ? prev.weeklyPlan : "",
-              phonePrice: safePrice > 0 ? formatInputWithCommas(String(safePrice)) : "",
+              iphoneModel: "",
+              capacity: "",
+              plan: "",
+              monthlyPlan: "",
+              weeklyPlan: "",
+              phonePrice: "",
+              downPayment: "",
             };
-          });
-        }
+          }
+
+          const nextCapacity = found.capacities.includes(prev.capacity) ? prev.capacity : "";
+          const safePlan = prev.plan && found.allowedPlans.includes(prev.plan as PlanType) ? prev.plan : "";
+          const safePrice = nextCapacity ? Number(found.pricesByCapacity?.[nextCapacity] || 0) : 0;
+
+          return {
+            ...prev,
+            iphoneModel: found.model,
+            capacity: nextCapacity,
+            plan: safePlan,
+            monthlyPlan: safePlan === "Monthly" ? prev.monthlyPlan : "",
+            weeklyPlan: safePlan === "Weekly" ? prev.weeklyPlan : "",
+            phonePrice: safePrice > 0 ? formatInputWithCommas(String(safePrice)) : "",
+          };
+        });
       } catch {
         if (!active) return;
         setCatalogError("Failed to load device options");
@@ -466,29 +476,29 @@ export default function ApplyPage() {
       return;
     }
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const payload = {
+      fullName: form.fullName.trim(),
+      email: form.email.trim().toLowerCase(),
+      phone: form.phone.trim(),
+      iphoneModel: form.iphoneModel,
+      capacity: form.capacity,
+      plan: form.plan,
+      anonymousId: getOrCreateAnonymousId(),
+      referrer: document.referrer || "",
+      landingPage: window.location.href,
+      utmSource: urlParams.get("utm_source") || "",
+      utmMedium: urlParams.get("utm_medium") || "",
+      utmCampaign: urlParams.get("utm_campaign") || "",
+      utmTerm: urlParams.get("utm_term") || "",
+      utmContent: urlParams.get("utm_content") || "",
+      website: "",
+    };
+
     setSubmitting(true);
     try {
-      const urlParams = new URLSearchParams(window.location.search);
-      const payload = {
-        fullName: form.fullName.trim(),
-        email: form.email.trim().toLowerCase(),
-        phone: form.phone.trim(),
-        iphoneModel: form.iphoneModel,
-        capacity: form.capacity,
-        plan: form.plan,
-        anonymousId: getOrCreateAnonymousId(),
-        referrer: document.referrer || "",
-        landingPage: window.location.href,
-        utmSource: urlParams.get("utm_source") || "",
-        utmMedium: urlParams.get("utm_medium") || "",
-        utmCampaign: urlParams.get("utm_campaign") || "",
-        utmTerm: urlParams.get("utm_term") || "",
-        utmContent: urlParams.get("utm_content") || "",
-        website: "",
-      };
-
       const response = await api.post("/api/v1/public/easybuy-requests", payload, {
-        suppressErrorToast: false,
+        suppressErrorToast: true,
       } as any);
 
       const requestId = String(response?.data?.data?.requestId || "");
@@ -516,27 +526,36 @@ export default function ApplyPage() {
         request_status: String(response?.data?.data?.status || "verified"),
       });
 
-      if (catalog.length) {
-        const first = catalog[0];
-        const firstCapacity = first.capacities[0] || "";
-        const firstPrice = Number(first.pricesByCapacity?.[firstCapacity] || 0);
-
-        setForm({
-          ...initialFormState,
-          iphoneModel: first.model,
-          capacity: firstCapacity,
-          phonePrice: firstPrice > 0 ? formatInputWithCommas(String(firstPrice)) : "",
-        });
-      } else {
-        setForm(initialFormState);
-      }
+      setForm(initialFormState);
 
       setBasicErrors({});
       setStep(1);
       setDownPaymentTouched(false);
       localStorage.removeItem(DRAFT_KEY);
-    } catch {
-      // shared error toast via axios interceptor
+    } catch (error: any) {
+      const statusCode = Number(error?.response?.status || 0);
+
+      if (statusCode === 409) {
+        setContactAdminWhatsAppUrl(
+          buildPublicWhatsAppUrl({
+            fullName: payload.fullName,
+            email: payload.email,
+            phone: payload.phone,
+            iphoneModel: payload.iphoneModel,
+            capacity: payload.capacity,
+            plan: payload.plan as "Monthly" | "Weekly",
+          })
+        );
+        setContactAdminModalOpen(true);
+        toast.error("You already have an active request for this device. Contact Melvin Gadgets on WhatsApp.");
+        return;
+      }
+
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        "Unable to submit request right now. Please try again.";
+      toast.error(String(message));
     } finally {
       setSubmitting(false);
     }

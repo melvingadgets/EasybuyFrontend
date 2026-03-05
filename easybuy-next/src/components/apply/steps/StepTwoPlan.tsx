@@ -67,11 +67,12 @@ export function StepTwoPlan({
           </label>
           <select
             id="iphone-model"
-            className={`${inputBase} border-input focus:ring-ring`}
+            className={`${inputBase} ${form.iphoneModel ? "border-input focus:ring-ring" : "border-red-500 focus:ring-red-500"}`}
             value={form.iphoneModel}
             onChange={(e) => onModelChange(e.target.value)}
             disabled={loadingCatalog || !catalog.length}
           >
+            <option value="">Select iPhone model</option>
             {catalog.map((item) => (
               <option key={item.model} value={item.model}>
                 {item.model}

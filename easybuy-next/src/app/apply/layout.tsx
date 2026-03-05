@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import previewImage from "@/IMG_1938 (1).png";
+
+const OG_IMAGE_PATH = "/og-image.png";
 
 const APPLY_TITLE = "IPHONE EASYBUY APPLICATION FORM";
 const APPLY_DESCRIPTION =
@@ -20,9 +21,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: previewImage.src,
-        width: previewImage.width,
-        height: previewImage.height,
+        url: OG_IMAGE_PATH,
         alt: "Melvin Gadgets iPhone EasyBuy application form",
       },
     ],
@@ -31,7 +30,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: APPLY_TITLE,
     description: APPLY_DESCRIPTION,
-    images: [previewImage.src],
+    images: [OG_IMAGE_PATH],
   },
 };
 

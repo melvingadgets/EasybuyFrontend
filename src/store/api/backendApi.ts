@@ -11,6 +11,7 @@ import type {
   EasyBoughtItem,
   PendingReceiptItem,
   PaginationMeta,
+  PublicEasyBuyAbandonedDraft,
   PublicEasyBuyRequest,
   ReceiptUploadedDatePreview,
   ReceiptUploadedDateUpdate,
@@ -153,6 +154,7 @@ export const backendApi = createApi({
     "SuperAdminUsersWithItems",
     "Maintenance",
     "PublicEasyBuyRequests",
+    "PublicEasyBuyAbandonedDrafts",
   ],
   endpoints: (builder) => ({
     getCurrentUser: builder.query<ApiSuccess<CurrentUser>, void>({
@@ -371,6 +373,32 @@ export const backendApi = createApi({
       providesTags: [{ type: "PublicEasyBuyRequests", id: "LIST" }],
     }),
 
+    getSuperAdminAbandonedPublicEasyBuyDrafts: builder.query<
+      ApiSuccess<PublicEasyBuyAbandonedDraft[]> & {
+        pagination?: PaginationMeta;
+        meta?: {
+          inactivityMinutes?: number;
+          abandonedBefore?: string;
+        };
+      },
+      { search?: string; page?: number; limit?: number; inactivityMinutes?: number } | void
+    >({
+      query: (params) => {
+        const query = new URLSearchParams();
+        if (params?.search) query.set("search", params.search);
+        if (params?.page) query.set("page", String(params.page));
+        if (params?.limit) query.set("limit", String(params.limit));
+        if (params?.inactivityMinutes) query.set("inactivityMinutes", String(params.inactivityMinutes));
+
+        const suffix = query.toString() ? `?${query.toString()}` : "";
+        return {
+          url: `/api/v1/superadmin/public-easybuy-abandoned-drafts${suffix}`,
+          suppressErrorToast: true,
+        };
+      },
+      providesTags: [{ type: "PublicEasyBuyAbandonedDrafts", id: "LIST" }],
+    }),
+
     approveSuperAdminPublicEasyBuyRequest: builder.mutation<
       ApiSuccess<PublicEasyBuyRequest>,
       { requestId: string; reason?: string }
@@ -443,6 +471,7 @@ export const {
   useLazyPreviewEasyBoughtItemCreatedDateQuery,
   useUpdateEasyBoughtItemCreatedDateMutation,
   useGetSuperAdminPublicEasyBuyRequestsQuery,
+  useGetSuperAdminAbandonedPublicEasyBuyDraftsQuery,
   useApproveSuperAdminPublicEasyBuyRequestMutation,
   useRejectSuperAdminPublicEasyBuyRequestMutation,
   useConvertSuperAdminPublicEasyBuyRequestMutation,

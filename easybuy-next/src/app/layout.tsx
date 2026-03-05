@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Manrope, Sora } from "next/font/google";
-import previewImage from "@/IMG_1938 (1).png";
 import "./globals.css";
 import { ToasterProvider } from "@/components/ToasterProvider";
 import { GlobalLoadingOverlay } from "@/components/GlobalLoadingOverlay";
@@ -16,6 +15,7 @@ const sora = Sora({
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://aurapaytracker.vercel.app";
+const OG_IMAGE_PATH = "/og-image.png";
 const DEFAULT_TITLE = "Melvin Gadgets | iPhone EasyBuy Nigeria";
 const DEFAULT_DESCRIPTION =
   "Apply for iPhone EasyBuy in Nigeria. Clear phone pricing by capacity, weekly or monthly plans, and fast WhatsApp support.";
@@ -43,9 +43,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: previewImage.src,
-        width: previewImage.width,
-        height: previewImage.height,
+        url: OG_IMAGE_PATH,
         alt: "Melvin Gadgets EasyBuy iPhone application",
       },
     ],
@@ -54,7 +52,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: DEFAULT_TITLE,
     description: DEFAULT_DESCRIPTION,
-    images: [previewImage.src],
+    images: [OG_IMAGE_PATH],
   },
 };
 
