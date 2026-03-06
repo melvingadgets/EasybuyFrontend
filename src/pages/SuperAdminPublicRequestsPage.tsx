@@ -4,6 +4,7 @@ import ClipLoader from "react-spinners/ClipLoader";
 import { BlurLoadingContainer } from "../components/BlurLoadingContainer";
 import { MobileField } from "../components/superadmin/MobileField";
 import { PublicRequestStatusBadge } from "../components/superadmin/PublicRequestStatusBadge";
+import { PublicSubmissionDetailsModal } from "../components/superadmin/PublicSubmissionDetailsModal";
 import { getRtkErrorMessage } from "../lib/rtkError";
 import { formatCurrency, formatDateTime } from "../lib/superadminFormat";
 import {
@@ -38,6 +39,7 @@ export const SuperAdminPublicRequestsPage = () => {
   const [reasonByRequestId, setReasonByRequestId] = useState<Record<string, string>>({});
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [convertModalRequest, setConvertModalRequest] = useState<PublicEasyBuyRequest | null>(null);
+  const [viewDetailsModalRequest, setViewDetailsModalRequest] = useState<PublicEasyBuyRequest | null>(null);
   const [convertUserEmail, setConvertUserEmail] = useState("");
   const [convertPhonePrice, setConvertPhonePrice] = useState("");
   const [convertDownPayment, setConvertDownPayment] = useState("");
@@ -239,7 +241,7 @@ export const SuperAdminPublicRequestsPage = () => {
                     />
                   </div>
 
-                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  <div className="mt-3 grid gap-2 sm:grid-cols-4">
                     <button
                       type="button"
                       onClick={() => onApprove(request.requestId)}
@@ -263,6 +265,13 @@ export const SuperAdminPublicRequestsPage = () => {
                       className="rounded-md border border-border bg-card px-3 py-2 text-xs hover:bg-muted disabled:opacity-60"
                     >
                       Convert
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewDetailsModalRequest(request)}
+                      className="rounded-md border border-border bg-background px-3 py-2 text-xs hover:bg-muted"
+                    >
+                      View More
                     </button>
                   </div>
 
@@ -358,6 +367,13 @@ export const SuperAdminPublicRequestsPage = () => {
                             className="rounded-md border border-border bg-background px-3 py-1.5 text-xs hover:bg-muted disabled:opacity-60"
                           >
                             Convert
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setViewDetailsModalRequest(request)}
+                            className="rounded-md border border-border bg-background px-3 py-1.5 text-xs hover:bg-muted"
+                          >
+                            View More
                           </button>
                           {loadingAction && (
                             <ClipLoader color="hsl(var(--primary))" size={14} speedMultiplier={0.9} />
@@ -502,6 +518,12 @@ export const SuperAdminPublicRequestsPage = () => {
           </article>
         </div>
       )}
+
+      <PublicSubmissionDetailsModal
+        item={viewDetailsModalRequest}
+        title="Public Request Details"
+        onClose={() => setViewDetailsModalRequest(null)}
+      />
     </BlurLoadingContainer>
   );
 };

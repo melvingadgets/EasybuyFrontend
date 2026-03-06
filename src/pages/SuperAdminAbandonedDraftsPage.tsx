@@ -1,13 +1,16 @@
 import { useMemo, useState } from "react";
 import { BlurLoadingContainer } from "../components/BlurLoadingContainer";
+import { PublicSubmissionDetailsModal } from "../components/superadmin/PublicSubmissionDetailsModal";
 import { MobileField } from "../components/superadmin/MobileField";
 import { getRtkErrorMessage } from "../lib/rtkError";
 import { formatDateTime } from "../lib/superadminFormat";
 import { useGetSuperAdminAbandonedPublicEasyBuyDraftsQuery } from "../store/api/backendApi";
+import type { PublicEasyBuyAbandonedDraft } from "../types/api";
 
 export const SuperAdminAbandonedDraftsPage = () => {
   const [search, setSearch] = useState("");
   const [inactivityMinutesInput, setInactivityMinutesInput] = useState("30");
+  const [viewDetailsModalDraft, setViewDetailsModalDraft] = useState<PublicEasyBuyAbandonedDraft | null>(null);
 
   const inactivityMinutes = Math.max(Number.parseInt(inactivityMinutesInput || "30", 10) || 30, 5);
 
@@ -96,6 +99,15 @@ export const SuperAdminAbandonedDraftsPage = () => {
                   />
                   <MobileField label="Current Step" value={draft.currentStep || "-"} />
                   <MobileField label="Last Seen" value={formatDateTime(draft.updatedAt)} />
+                  <div className="mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setViewDetailsModalDraft(draft)}
+                      className="rounded-md border border-border bg-background px-3 py-2 text-xs hover:bg-muted"
+                    >
+                      View More
+                    </button>
+                  </div>
                 </div>
               </article>
             ))}
@@ -114,6 +126,7 @@ export const SuperAdminAbandonedDraftsPage = () => {
                   <th className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground">Device</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground">Step</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground">Last Seen</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-card">
@@ -130,11 +143,20 @@ export const SuperAdminAbandonedDraftsPage = () => {
                     </td>
                     <td className="px-3 py-2 text-sm">{draft.currentStep || "-"}</td>
                     <td className="px-3 py-2 text-sm">{formatDateTime(draft.updatedAt)}</td>
+                    <td className="px-3 py-2 text-sm">
+                      <button
+                        type="button"
+                        onClick={() => setViewDetailsModalDraft(draft)}
+                        className="rounded-md border border-border bg-background px-3 py-1.5 text-xs hover:bg-muted"
+                      >
+                        View More
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {drafts.length === 0 && (
                   <tr>
-                    <td className="px-3 py-4 text-sm text-muted-foreground" colSpan={6}>
+                    <td className="px-3 py-4 text-sm text-muted-foreground" colSpan={7}>
                       No abandoned drafts found.
                     </td>
                   </tr>
@@ -144,6 +166,12 @@ export const SuperAdminAbandonedDraftsPage = () => {
           </div>
         </div>
       </section>
+
+      <PublicSubmissionDetailsModal
+        item={viewDetailsModalDraft}
+        title="Abandoned Draft Details"
+        onClose={() => setViewDetailsModalDraft(null)}
+      />
     </BlurLoadingContainer>
   );
 };
