@@ -1,4 +1,5 @@
 {
   "/apply/page": "app/apply/page.js",
+  "/og/route": "app-edge-has-no-entrypoint",
   "/page": "app/page.js"
 }

@@ -15,10 +15,10 @@ const sora = Sora({
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://aurapaytracker.vercel.app";
-const OG_IMAGE_PATH = "/og-image.png";
-const DEFAULT_TITLE = "Melvin Gadgets | iPhone EasyBuy Nigeria";
+const OG_IMAGE_PATH = "/og";
+const DEFAULT_TITLE = "Own an iPhone Today — Pay Weekly or Monthly | Melvin Gadgets";
 const DEFAULT_DESCRIPTION =
-  "Apply for iPhone EasyBuy in Nigeria. Clear phone pricing by capacity, weekly or monthly plans, and fast WhatsApp support.";
+  "No full payment needed. Pick your iPhone model, choose a plan that fits your budget, and apply in minutes. Trusted by Nigerians.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -44,7 +44,9 @@ export const metadata: Metadata = {
     images: [
       {
         url: OG_IMAGE_PATH,
-        alt: "Melvin Gadgets EasyBuy iPhone application",
+        width: 1200,
+        height: 630,
+        alt: "Melvin Gadgets — Own an iPhone on EasyBuy. Weekly & monthly plans available.",
       },
     ],
   },

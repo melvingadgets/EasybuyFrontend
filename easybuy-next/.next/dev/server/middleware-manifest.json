@@ -2,5 +2,53 @@
   "version": 3,
   "middleware": {},
   "sortedMiddleware": [],
-  "functions": {}
+  "functions": {
+    "/og/route": {
+      "files": [
+        "server/middleware-build-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "server/server-reference-manifest.js",
+        "server/app/og/route_client-reference-manifest.js",
+        "server/edge/chunks/easybuy-next__next-internal_server_app_og_route_actions_5090f10b.js",
+        "server/edge/chunks/0b3d0_next_dist_esm_fda6fdf2._.js",
+        "server/edge/chunks/0b3d0_next_dist_compiled_react-server-dom-turbopack_9a9cbe5d._.js",
+        "server/edge/chunks/0b3d0_next_dist_compiled_@vercel_og_aecaaf45._.js",
+        "server/edge/chunks/0b3d0_next_dist_compiled_db15160e._.js",
+        "server/edge/chunks/0b3d0_next_dist_35977c9e._.js",
+        "server/edge/chunks/[root-of-the-server]__fc2abe57._.js",
+        "server/edge/chunks/d33c0_next_dist_esm_build_templates_edge-wrapper_a54a3f19.js"
+      ],
+      "name": "app/og/route",
+      "page": "/og/route",
+      "matchers": [
+        {
+          "regexp": "^/og(?:/)?$",
+          "originalSource": "/og"
+        }
+      ],
+      "wasm": [
+        {
+          "name": "wasm_fdb56e4cc5936d29",
+          "filePath": "server/edge/chunks/0b3d0_next_dist_compiled_@vercel_og_resvg_23ace1ce.wasm"
+        },
+        {
+          "name": "wasm_1ccdc983b1fd9f87",
+          "filePath": "server/edge/chunks/0b3d0_next_dist_compiled_@vercel_og_yoga_23ace1ce.wasm"
+        }
+      ],
+      "assets": [
+        {
+          "name": "server/edge/assets/noto-sans-v27-latin-regular.bdfa676c.ttf",
+          "filePath": "server/edge/assets/noto-sans-v27-latin-regular.bdfa676c.ttf"
+        }
+      ],
+      "env": {
+        "__NEXT_BUILD_ID": "development",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "t/Dr/yj4BbKePPj8xSU0c094s5+qgm3bzVMrOakTxLg=",
+        "__NEXT_PREVIEW_MODE_ID": "594f3ed91d57222155716c1f1e8f4a03",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "b2d3d8c6d6130b9960eb9b52ba85e97ce86298189af520149f22954bff5bf8bc",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "986041e755e6e93ec8892dc5922ac1df1d03a99228aa7de030483d8341181803"
+      }
+    }
+  }
 }
