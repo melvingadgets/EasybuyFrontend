@@ -1,9 +1,12 @@
 import type { ApplyFormState } from "@/components/apply/types";
-import type { EasyBuyCatalogItem } from "@/types/easybuy";
+import type { EasyBuyCatalogItem, FinanceProviderInfo } from "@/types/easybuy";
 import { formatAmount, getSafePlan } from "@/components/apply/helpers";
 
 type StepTwoPlanProps = {
   form: ApplyFormState;
+  providers: FinanceProviderInfo[];
+  selectedProvider: string;
+  loadingProviders: boolean;
   catalog: EasyBuyCatalogItem[];
   loadingCatalog: boolean;
   selectedModel: EasyBuyCatalogItem | null;
@@ -17,6 +20,7 @@ type StepTwoPlanProps = {
   downPaymentTooLow: boolean;
   downPaymentAbovePhonePrice: boolean;
   hasPlanAndDuration: boolean;
+  onProviderChange: (provider: string) => void;
   onFormChange: (patch: Partial<ApplyFormState>) => void;
   onModelChange: (model: string) => void;
   onPhonePriceChange: (value: string) => void;
@@ -28,6 +32,9 @@ const inputBase = "w-full rounded-md border bg-background px-3 py-2.5 text-base 
 
 export function StepTwoPlan({
   form,
+  providers,
+  selectedProvider,
+  loadingProviders,
   catalog,
   loadingCatalog,
   selectedModel,
@@ -41,6 +48,7 @@ export function StepTwoPlan({
   downPaymentTooLow,
   downPaymentAbovePhonePrice,
   hasPlanAndDuration,
+  onProviderChange,
   onFormChange,
   onModelChange,
   onPhonePriceChange,
@@ -61,6 +69,30 @@ export function StepTwoPlan({
   return (
     <div className="space-y-5 step-enter">
       <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2 sm:col-span-2">
+          <label htmlFor="provider" className="text-sm font-medium">
+            Payment Provider
+          </label>
+          <select
+            id="provider"
+            className={`${inputBase} border-input focus:ring-ring`}
+            value={selectedProvider}
+            onChange={(e) => onProviderChange(e.target.value)}
+            disabled={loadingProviders || !providers.length}
+          >
+            {providers.map((provider) => (
+              <option key={provider.slug} value={provider.slug}>
+                {provider.displayName}
+              </option>
+            ))}
+          </select>
+          <p className="text-sm text-muted-foreground">
+            {providers.length > 1
+              ? "Choose the provider to see the right plan and down payment rules."
+              : "Only one payment provider is currently available."}
+          </p>
+        </div>
+
         <div className="space-y-2 sm:col-span-2">
           <label htmlFor="iphone-model" className="text-sm font-medium">
             iPhone Model

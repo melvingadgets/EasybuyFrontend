@@ -16,15 +16,36 @@ import {
 } from "@/components/apply/helpers";
 import type { ApplyFormState, ApplyStep, PlanType } from "@/components/apply/types";
 import { api } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
 import { initializeTikTokPixel, trackTikTokEvent, trackTikTokPageView } from "@/lib/tiktokPixel";
-import type { EasyBuyCatalogResponse } from "@/types/easybuy";
+import type { EasyBuyCatalogResponse, FinanceProviderInfo } from "@/types/easybuy";
 
 type PublicCatalogResponse = {
   message: string;
   data?: EasyBuyCatalogResponse;
 };
 
+type PublicProvidersResponse = {
+  message: string;
+  data?: FinanceProviderInfo[];
+};
+
 const DRAFT_KEY = "easybuy_next_apply_draft_v1";
+const FALLBACK_PROVIDERS: FinanceProviderInfo[] = [{ slug: "aurapay", displayName: "AuraPay" }];
+
+const getFirstPricedCapacity = (model: EasyBuyCatalogResponse["models"][number] | null) =>
+  model?.capacities.find((capacity) => {
+    const price = Number(model.pricesByCapacity?.[capacity]);
+    return Number.isFinite(price) && price > 0;
+  }) || model?.capacities[0] || "";
+
+const getDefaultCatalogModel = (models: EasyBuyCatalogResponse["models"]) =>
+  models.find((model) =>
+    model.capacities.some((capacity) => {
+      const price = Number(model.pricesByCapacity?.[capacity]);
+      return Number.isFinite(price) && price > 0;
+    })
+  ) || models[0] || null;
 
 const initialFormState: ApplyFormState = {
   fullName: "",
@@ -49,10 +70,14 @@ const normalizeStep = (step: unknown): ApplyStep => {
 
 export default function ApplyPage() {
   const pixelPageTrackedRef = useRef(false);
+  const formStartTrackedRef = useRef(false);
   const [draftReady, setDraftReady] = useState(false);
   const [step, setStep] = useState<ApplyStep>(1);
   const [modelExplicitlySelected, setModelExplicitlySelected] = useState(false);
 
+  const [providers, setProviders] = useState<FinanceProviderInfo[]>([]);
+  const [selectedProvider, setSelectedProvider] = useState("");
+  const [loadingProviders, setLoadingProviders] = useState(true);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [catalog, setCatalog] = useState<EasyBuyCatalogResponse["models"]>([]);
@@ -79,6 +104,8 @@ export default function ApplyPage() {
   const availableCapacities = selectedModel?.capacities || [];
   const monthlyDurations = planRules?.monthlyDurations || [];
   const weeklyDurations = planRules?.weeklyDurations || [];
+  const selectedProviderName =
+    providers.find((provider) => provider.slug === selectedProvider)?.displayName || selectedProvider;
 
   const selectedCapacityPrice = useMemo(() => {
     if (!selectedModel || !form.capacity) return 0;
@@ -86,10 +113,27 @@ export default function ApplyPage() {
     return Number.isFinite(rawPrice) && rawPrice > 0 ? rawPrice : 0;
   }, [selectedModel, form.capacity]);
 
+  const phonePriceNumber = useMemo(() => parseFormattedNumber(form.phonePrice), [form.phonePrice]);
+
   const downPaymentPercentage = useMemo(() => {
+    const rule = planRules?.downPaymentRule;
+    if (rule?.type === "flat") {
+      const flat = Number(rule.percentage);
+      return Number.isFinite(flat) && flat > 0 ? flat : 0;
+    }
+
+    if (rule?.type === "price_threshold") {
+      const matchedThreshold = [...rule.thresholds]
+        .sort((a, b) => b.minPrice - a.minPrice)
+        .find((threshold) => phonePriceNumber >= threshold.minPrice);
+
+      const thresholdPercentage = Number(matchedThreshold?.percentage);
+      return Number.isFinite(thresholdPercentage) && thresholdPercentage > 0 ? thresholdPercentage : 0;
+    }
+
     const raw = Number(selectedModel?.downPaymentPercentage);
     return Number.isFinite(raw) && raw > 0 ? raw : 0;
-  }, [selectedModel?.downPaymentPercentage]);
+  }, [phonePriceNumber, planRules?.downPaymentRule, selectedModel?.downPaymentPercentage]);
 
   const downPaymentMultiplier = downPaymentPercentage / 100;
 
@@ -125,6 +169,9 @@ export default function ApplyPage() {
         if (parsed?.step) {
           setStep(normalizeStep(parsed.step));
         }
+        if (typeof parsed?.selectedProvider === "string") {
+          setSelectedProvider(String(parsed.selectedProvider).trim());
+        }
       }
     } catch {
       localStorage.removeItem(DRAFT_KEY);
@@ -137,18 +184,61 @@ export default function ApplyPage() {
     initializeTikTokPixel();
     if (pixelPageTrackedRef.current) return;
     trackTikTokPageView();
+    trackEvent("page_view");
     pixelPageTrackedRef.current = true;
   }, []);
 
   useEffect(() => {
     let active = true;
 
-    const loadCatalog = async () => {
-      setLoadingCatalog(true);
+    const loadProviders = async () => {
+      setLoadingProviders(true);
       try {
-        const response = await api.get<PublicCatalogResponse>("/api/v1/public/easybuy-catalog", {
+        const response = await api.get<PublicProvidersResponse>("/api/v1/public/providers", {
           suppressErrorToast: false,
         } as any);
+        const nextProviders = response.data?.data?.length ? response.data.data : FALLBACK_PROVIDERS;
+        if (!active) return;
+        setProviders(nextProviders);
+        setSelectedProvider((current) => {
+          if (current && nextProviders.some((provider) => provider.slug === current)) {
+            return current;
+          }
+          return nextProviders[0]?.slug || "aurapay";
+        });
+      } catch {
+        if (!active) return;
+        setProviders(FALLBACK_PROVIDERS);
+        setSelectedProvider((current) =>
+          current && FALLBACK_PROVIDERS.some((provider) => provider.slug === current) ? current : "aurapay"
+        );
+      } finally {
+        if (active) setLoadingProviders(false);
+      }
+    };
+
+    loadProviders();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedProvider) return;
+
+    let active = true;
+
+    const loadCatalog = async () => {
+      setLoadingCatalog(true);
+      setCatalogError("");
+      try {
+        const response = await api.get<PublicCatalogResponse>(
+          `/api/v1/public/easybuy-catalog?provider=${encodeURIComponent(selectedProvider)}`,
+          {
+            suppressErrorToast: false,
+          } as any
+        );
 
         const data = response.data?.data;
         const models = data?.models || [];
@@ -160,7 +250,8 @@ export default function ApplyPage() {
 
         setForm((prev) => {
           const found = models.find((item) => item.model === prev.iphoneModel);
-          if (!found) {
+          const resolvedModel = found || getDefaultCatalogModel(models);
+          if (!resolvedModel) {
             return {
               ...prev,
               iphoneModel: "",
@@ -173,13 +264,16 @@ export default function ApplyPage() {
             };
           }
 
-          const nextCapacity = found.capacities.includes(prev.capacity) ? prev.capacity : "";
-          const safePlan = prev.plan && found.allowedPlans.includes(prev.plan as PlanType) ? prev.plan : "";
-          const safePrice = nextCapacity ? Number(found.pricesByCapacity?.[nextCapacity] || 0) : 0;
+          const nextCapacity = resolvedModel.capacities.includes(prev.capacity)
+            ? prev.capacity
+            : getFirstPricedCapacity(resolvedModel);
+          const safePlan =
+            prev.plan && resolvedModel.allowedPlans.includes(prev.plan as PlanType) ? prev.plan : "";
+          const safePrice = nextCapacity ? Number(resolvedModel.pricesByCapacity?.[nextCapacity] || 0) : 0;
 
           return {
             ...prev,
-            iphoneModel: found.model,
+            iphoneModel: resolvedModel.model,
             capacity: nextCapacity,
             plan: safePlan,
             monthlyPlan: safePlan === "Monthly" ? prev.monthlyPlan : "",
@@ -200,7 +294,7 @@ export default function ApplyPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [selectedProvider]);
 
   useEffect(() => {
     if (!draftReady) return;
@@ -211,9 +305,10 @@ export default function ApplyPage() {
         step,
         form,
         modelExplicitlySelected,
+        selectedProvider,
       })
     );
-  }, [draftReady, form, modelExplicitlySelected, step]);
+  }, [draftReady, form, modelExplicitlySelected, selectedProvider, step]);
 
   useEffect(() => {
     if (!planRules) return;
@@ -292,15 +387,12 @@ export default function ApplyPage() {
       return;
     }
 
-    const phonePrice = parseFormattedNumber(form.phonePrice);
-    const minimumDownPayment = phonePrice * downPaymentMultiplier;
+    const minimumDownPayment = phonePriceNumber * downPaymentMultiplier;
     setForm((prev) => ({
       ...prev,
       downPayment: minimumDownPayment > 0 ? formatInputWithCommas(minimumDownPayment.toFixed(2)) : "",
     }));
-  }, [downPaymentMultiplier, downPaymentTouched, form.phonePrice, hasPlanAndDuration]);
-
-  const phonePriceNumber = useMemo(() => parseFormattedNumber(form.phonePrice), [form.phonePrice]);
+  }, [downPaymentMultiplier, downPaymentTouched, hasPlanAndDuration, phonePriceNumber]);
 
   const minimumRequiredDownPayment = useMemo(
     () => (hasPlanAndDuration ? phonePriceNumber * downPaymentMultiplier : 0),
@@ -355,6 +447,12 @@ export default function ApplyPage() {
     setForm((prev) => ({ ...prev, ...patch }));
   };
 
+  const handleFormStart = () => {
+    if (formStartTrackedRef.current) return;
+    formStartTrackedRef.current = true;
+    trackEvent("form_start", { provider: selectedProvider });
+  };
+
   const validateStepOne = () => {
     const nextErrors: Partial<Record<"fullName" | "email" | "phone", string>> = {};
 
@@ -385,6 +483,11 @@ export default function ApplyPage() {
   };
 
   const validateStepTwo = () => {
+    if (!selectedProvider) {
+      toast.error("Select a payment provider");
+      return false;
+    }
+
     if (!selectedModel) {
       toast.error("Device options are unavailable. Try again.");
       return false;
@@ -439,6 +542,7 @@ export default function ApplyPage() {
     const urlParams = new URLSearchParams(window.location.search);
     const payload: Record<string, unknown> = {
       step: targetStep,
+      provider: selectedProvider,
       anonymousId: getOrCreateAnonymousId(),
       fullName: form.fullName.trim(),
       email: form.email.trim().toLowerCase(),
@@ -465,11 +569,24 @@ export default function ApplyPage() {
     });
   };
 
+  const handleProviderChange = (provider: string) => {
+    setSelectedProvider(provider);
+    trackEvent("provider_selected", { provider });
+    setDownPaymentTouched(false);
+    applyFormPatch({
+      plan: "",
+      monthlyPlan: "",
+      weeklyPlan: "",
+      downPayment: "",
+    });
+  };
+
   const goNext = () => {
     if (!validateCurrentStep()) return;
 
     if (step === 1 || step === 2) {
       saveDraftStep(step);
+      trackEvent("step_complete", { step, provider: selectedProvider });
     }
 
     setStep((prev) => {
@@ -494,6 +611,7 @@ export default function ApplyPage() {
 
     const urlParams = new URLSearchParams(window.location.search);
     const payload = {
+      provider: selectedProvider,
       fullName: form.fullName.trim(),
       email: form.email.trim().toLowerCase(),
       phone: form.phone.trim(),
@@ -541,6 +659,12 @@ export default function ApplyPage() {
         value: Number.isFinite(phonePriceNumber) ? phonePriceNumber : 0,
         request_status: String(response?.data?.data?.status || "verified"),
       });
+      trackEvent("form_submit", {
+        provider: selectedProvider,
+        iphoneModel: payload.iphoneModel,
+        plan: payload.plan,
+        capacity: payload.capacity,
+      });
 
       setForm(initialFormState);
 
@@ -582,13 +706,16 @@ export default function ApplyPage() {
   
   const stepView = useMemo(() => {
     if (step === 1) {
-      return <StepOneBasicInfo form={form} errors={basicErrors} onChange={setField} />;
+      return <StepOneBasicInfo form={form} errors={basicErrors} onChange={setField} onFirstInteraction={handleFormStart} />;
     }
 
     if (step === 2) {
       return (
         <StepTwoPlan
           form={form}
+          providers={providers}
+          selectedProvider={selectedProvider}
+          loadingProviders={loadingProviders}
           catalog={catalog}
           loadingCatalog={loadingCatalog}
           selectedModel={selectedModel}
@@ -602,6 +729,7 @@ export default function ApplyPage() {
           downPaymentTooLow={downPaymentTooLow}
           downPaymentAbovePhonePrice={downPaymentAbovePhonePrice}
           hasPlanAndDuration={hasPlanAndDuration}
+          onProviderChange={handleProviderChange}
           onFormChange={applyFormPatch}
           onModelChange={(model) => {
             setPreviewUnavailable(false);
@@ -621,6 +749,7 @@ export default function ApplyPage() {
     return (
       <StepFourReview
         form={form}
+        providerName={selectedProviderName}
         downPaymentPercentage={downPaymentPercentage}
         minimumRequiredDownPayment={minimumRequiredDownPayment}
         calculatedNextPayment={calculatedNextPayment}
@@ -636,13 +765,18 @@ export default function ApplyPage() {
     downPaymentTooLow,
     hasPlanAndDuration,
     form,
+    handleFormStart,
     loadingCatalog,
     minimumRequiredDownPayment,
     monthlyDurations,
     previewUnavailable,
+    providers,
     selectedModel,
+    selectedProvider,
+    selectedProviderName,
     step,
     weeklyDurations,
+    loadingProviders,
   ]);
 
   return (

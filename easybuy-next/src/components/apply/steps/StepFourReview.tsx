@@ -3,6 +3,7 @@ import { formatAmount } from "@/components/apply/helpers";
 
 type StepFourReviewProps = {
   form: ApplyFormState;
+  providerName: string;
   downPaymentPercentage: number;
   minimumRequiredDownPayment: number;
   calculatedNextPayment: number;
@@ -10,6 +11,7 @@ type StepFourReviewProps = {
 
 export function StepFourReview({
   form,
+  providerName,
   downPaymentPercentage,
   minimumRequiredDownPayment,
   calculatedNextPayment,
@@ -47,6 +49,10 @@ export function StepFourReview({
           <div>
             <dt className="text-sm text-muted-foreground">Device</dt>
             <dd className="font-medium">{form.iphoneModel ? `${form.iphoneModel} (${form.capacity})` : "-"}</dd>
+          </div>
+          <div>
+            <dt className="text-sm text-muted-foreground">Provider</dt>
+            <dd className="font-medium">{providerName || "-"}</dd>
           </div>
           <div>
             <dt className="text-sm text-muted-foreground">Plan Type</dt>

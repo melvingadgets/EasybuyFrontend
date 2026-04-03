@@ -4,11 +4,12 @@ type StepOneBasicInfoProps = {
   form: ApplyFormState;
   errors: Partial<Record<"fullName" | "email" | "phone", string>>;
   onChange: (field: keyof ApplyFormState, value: string) => void;
+  onFirstInteraction: () => void;
 };
 
 const inputBase = "w-full rounded-md border bg-background px-3 py-2.5 text-base focus:outline-none focus:ring-2";
 
-export function StepOneBasicInfo({ form, errors, onChange }: StepOneBasicInfoProps) {
+export function StepOneBasicInfo({ form, errors, onChange, onFirstInteraction }: StepOneBasicInfoProps) {
   return (
     <div className="space-y-5 step-enter">
       <div className="grid gap-4 sm:grid-cols-2">
@@ -21,6 +22,7 @@ export function StepOneBasicInfo({ form, errors, onChange }: StepOneBasicInfoPro
             className={`${inputBase} ${errors.fullName ? "border-red-500 focus:ring-red-500" : "border-input focus:ring-ring"}`}
             value={form.fullName}
             onChange={(e) => onChange("fullName", e.target.value)}
+            onFocus={onFirstInteraction}
             autoComplete="name"
           />
           {errors.fullName ? <p className="text-sm text-red-600">{errors.fullName}</p> : null}
