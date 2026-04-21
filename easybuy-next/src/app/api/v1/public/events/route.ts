@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
       request.headers.get("x-real-ip") ||
       "";
 
-    const res = await fetch(`${BACKEND_URL}/api/v1/public/easybuy-requests`, {
+    const res = await fetch(`${BACKEND_URL}/api/v1/public/events`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -19,9 +19,9 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(body),
     });
 
-    const data = await res.json().catch(() => ({ message: "Request failed" }));
+    const data = await res.json().catch(() => ({ message: "ok" }));
     return NextResponse.json(data, { status: res.status });
   } catch {
-    return NextResponse.json({ message: "Unable to reach the server. Please try again." }, { status: 502 });
+    return NextResponse.json({ message: "ok" }, { status: 200 });
   }
 }
