@@ -26,16 +26,11 @@ const shouldSuppressBackgroundEmailToast = (message: string): boolean => {
   );
 };
 
-const API_MODE = String(process.env.NEXT_PUBLIC_API_MODE || "online").trim().toLowerCase();
-const LOCAL_API_URL = String(process.env.NEXT_PUBLIC_API_LOCAL_URL || "http://localhost:552").trim();
-
-// In production, all client-side calls go to same-origin Next.js API routes
-// which proxy to the backend server-side. This prevents in-app browsers
+// All client-side calls go through same-origin Next.js API proxy routes,
+// which forward to the backend server-side. This prevents in-app browsers
 // (Snapchat, Instagram, TikTok) from blocking cross-origin requests.
-const baseURL = API_MODE === "local" ? LOCAL_API_URL : "";
-
 export const api = axios.create({
-  baseURL,
+  baseURL: "",
 });
 
 api.interceptors.request.use((config) => {
