@@ -14,7 +14,7 @@ const sora = Sora({
   subsets: ["latin"],
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://aurapaytracker.vercel.app";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://easybuy-frontend-bbox.vercel.app";
 const OG_IMAGE_PATH = "/og";
 const DEFAULT_TITLE = "Own an iPhone Today — Pay Weekly or Monthly | Melvin Gadgets";
 const DEFAULT_DESCRIPTION =
