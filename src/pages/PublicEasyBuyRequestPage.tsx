@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import ClipLoader from "react-spinners/ClipLoader";
 import { api } from "../lib/api";
+import { trackEvent } from "../lib/analytics";
 import { initializeTikTokPixel, trackTikTokEvent, trackTikTokPageView } from "../lib/tiktokPixel";
-import type { EasyBuyCatalogResponse } from "../types/api";
+import type { EasyBuyCatalogResponse, FinanceProviderInfo } from "../types/api";
 
 type PlanType = "Monthly" | "Weekly";
 type PlanSelection = "" | PlanType;
@@ -82,7 +83,11 @@ const buildPublicWhatsAppUrl = (params: {
 
 export const PublicEasyBuyRequestPage = () => {
   const pixelPageTrackedRef = useRef(false);
+  const formStartTrackedRef = useRef(false);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
+  const [providers, setProviders] = useState<FinanceProviderInfo[]>([]);
+  const [selectedProvider, setSelectedProvider] = useState("");
+  const [loadingProviders, setLoadingProviders] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [catalog, setCatalog] = useState<EasyBuyCatalogResponse["models"]>([]);
   const [planRules, setPlanRules] = useState<EasyBuyCatalogResponse["planRules"] | null>(null);
@@ -121,27 +126,92 @@ export const PublicEasyBuyRequestPage = () => {
   }, [selectedModel, form.capacity]);
   const isWeeklyOnly =
     selectedModel?.allowedPlans.length === 1 && selectedModel.allowedPlans[0] === "Weekly";
+  const phonePriceNumber = useMemo(() => parseFormattedNumber(form.phonePrice), [form.phonePrice]);
   const downPaymentPercentage = useMemo(() => {
+    const rule = planRules?.downPaymentRule;
+    if (rule?.type === "flat") {
+      const flat = Number(rule.percentage);
+      return Number.isFinite(flat) && flat > 0 ? flat : 0;
+    }
+
+    if (rule?.type === "price_threshold") {
+      const matchedThreshold = [...rule.thresholds]
+        .sort((a, b) => b.minPrice - a.minPrice)
+        .find((threshold) => phonePriceNumber >= threshold.minPrice);
+
+      const thresholdPercentage = Number(matchedThreshold?.percentage);
+      return Number.isFinite(thresholdPercentage) && thresholdPercentage > 0
+        ? thresholdPercentage
+        : 0;
+    }
+
     const raw = Number(selectedModel?.downPaymentPercentage);
     return Number.isFinite(raw) && raw > 0 ? raw : 0;
-  }, [selectedModel?.downPaymentPercentage]);
+  }, [phonePriceNumber, planRules?.downPaymentRule, selectedModel?.downPaymentPercentage]);
   const downPaymentMultiplier = downPaymentPercentage / 100;
 
   useEffect(() => {
     initializeTikTokPixel();
     if (pixelPageTrackedRef.current) return;
     trackTikTokPageView();
+    trackEvent("page_view");
     pixelPageTrackedRef.current = true;
   }, []);
 
   useEffect(() => {
     let active = true;
+    const loadProviders = async () => {
+      setLoadingProviders(true);
+      try {
+        const response = await api.get<{ message: string; data?: FinanceProviderInfo[] }>(
+          "/api/v1/public/providers",
+          { suppressErrorToast: false } as any
+        );
+        const list = response.data?.data || [];
+        if (!active) return;
+        setProviders(list);
+        if (list.length > 0) {
+          setSelectedProvider(list[0].slug);
+        }
+      } catch (_error) {
+        if (!active) return;
+        setProviders([{ slug: "aurapay", displayName: "AuraPay" }]);
+        setSelectedProvider("aurapay");
+      } finally {
+        if (active) setLoadingProviders(false);
+      }
+    };
+    loadProviders();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedProvider) return;
+    setForm((prev) => ({
+      fullName: prev.fullName,
+      email: prev.email,
+      phone: prev.phone,
+      iphoneModel: "",
+      capacity: "",
+      plan: "" as PlanSelection,
+      phonePrice: "",
+      downPayment: "",
+      monthlyPlan: "",
+      weeklyPlan: "",
+    }));
+    setDownPaymentTouched(false);
+    setCatalogError("");
+
+    let active = true;
     const loadCatalog = async () => {
       setLoadingCatalog(true);
       try {
-        const response = await api.get<PublicCatalogResponse>("/api/v1/public/easybuy-catalog", {
-          suppressErrorToast: false,
-        } as any);
+        const response = await api.get<PublicCatalogResponse>(
+          `/api/v1/public/easybuy-catalog?provider=${encodeURIComponent(selectedProvider)}`,
+          { suppressErrorToast: false } as any
+        );
         const data = response.data?.data;
         const models = data?.models || [];
         const nextPlanRules = data?.planRules || null;
@@ -174,7 +244,7 @@ export const PublicEasyBuyRequestPage = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [selectedProvider]);
 
   useEffect(() => {
     if (!planRules) return;
@@ -246,15 +316,12 @@ export const PublicEasyBuyRequestPage = () => {
   useEffect(() => {
     if (downPaymentTouched) return;
 
-    const phonePrice = parseFormattedNumber(form.phonePrice);
-    const minimumDownPayment = phonePrice * downPaymentMultiplier;
+    const minimumDownPayment = phonePriceNumber * downPaymentMultiplier;
     setForm((prev) => ({
       ...prev,
       downPayment: minimumDownPayment > 0 ? formatInputWithCommas(minimumDownPayment.toFixed(2)) : "",
     }));
-  }, [downPaymentMultiplier, downPaymentTouched, form.phonePrice]);
-
-  const phonePriceNumber = useMemo(() => parseFormattedNumber(form.phonePrice), [form.phonePrice]);
+  }, [downPaymentMultiplier, downPaymentTouched, phonePriceNumber]);
   const minimumRequiredDownPayment = useMemo(
     () => phonePriceNumber * downPaymentMultiplier,
     [downPaymentMultiplier, phonePriceNumber]
@@ -346,6 +413,7 @@ export const PublicEasyBuyRequestPage = () => {
         iphoneModel: form.iphoneModel,
         capacity: form.capacity,
         plan: resolvedPlan,
+        provider: selectedProvider,
         anonymousId: getOrCreateAnonymousId(),
         referrer: document.referrer || "",
         landingPage: window.location.href,
@@ -382,6 +450,12 @@ export const PublicEasyBuyRequestPage = () => {
         currency: "NGN",
         value: Number.isFinite(phonePriceNumber) ? phonePriceNumber : 0,
         request_status: String(response?.data?.data?.status || "pending_verification"),
+      });
+      trackEvent("form_submit", {
+        provider: selectedProvider,
+        iphoneModel: payload.iphoneModel,
+        plan: payload.plan,
+        capacity: payload.capacity,
       });
 
       if (catalog.length) {
@@ -461,6 +535,35 @@ export const PublicEasyBuyRequestPage = () => {
         )}
 
         <form onSubmit={submit} className="mt-6 grid gap-4 md:grid-cols-2">
+          <div className="space-y-2 md:col-span-2">
+            <label htmlFor="provider" className="text-sm font-medium">
+              Payment Provider
+            </label>
+            <select
+              id="provider"
+              className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              value={selectedProvider}
+              onChange={(e) => {
+                const provider = e.target.value;
+                setSelectedProvider(provider);
+                trackEvent("provider_selected", { provider });
+              }}
+              disabled={loadingProviders || providers.length <= 1}
+              required
+            >
+              {providers.map((p) => (
+                <option key={p.slug} value={p.slug}>
+                  {p.displayName}
+                </option>
+              ))}
+            </select>
+            {providers.length <= 1 && !loadingProviders && (
+              <p className="text-xs text-muted-foreground">
+                Only one payment provider is currently available.
+              </p>
+            )}
+          </div>
+
           <div className="space-y-2 md:col-span-2">
             <label htmlFor="iphone-model" className="text-sm font-medium">
               iPhone Model
@@ -686,7 +789,13 @@ export const PublicEasyBuyRequestPage = () => {
               id="full-name"
               className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               value={form.fullName}
-              onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))}
+              onChange={(e) => {
+                if (!formStartTrackedRef.current) {
+                  formStartTrackedRef.current = true;
+                  trackEvent("form_start", { provider: selectedProvider });
+                }
+                setForm((prev) => ({ ...prev, fullName: e.target.value }));
+              }}
               required
             />
           </div>
@@ -700,7 +809,13 @@ export const PublicEasyBuyRequestPage = () => {
               type="email"
               className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               value={form.email}
-              onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+              onChange={(e) => {
+                if (!formStartTrackedRef.current) {
+                  formStartTrackedRef.current = true;
+                  trackEvent("form_start", { provider: selectedProvider });
+                }
+                setForm((prev) => ({ ...prev, email: e.target.value }));
+              }}
               required
             />
           </div>
@@ -713,7 +828,13 @@ export const PublicEasyBuyRequestPage = () => {
               id="phone"
               className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               value={form.phone}
-              onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
+              onChange={(e) => {
+                if (!formStartTrackedRef.current) {
+                  formStartTrackedRef.current = true;
+                  trackEvent("form_start", { provider: selectedProvider });
+                }
+                setForm((prev) => ({ ...prev, phone: e.target.value }));
+              }}
               placeholder="e.g. +234..."
               required
             />
@@ -724,6 +845,8 @@ export const PublicEasyBuyRequestPage = () => {
             disabled={
               submitting ||
               loadingCatalog ||
+              loadingProviders ||
+              !selectedProvider ||
               !selectedModel ||
               !form.capacity ||
               !form.plan ||
@@ -805,5 +928,3 @@ export const PublicEasyBuyRequestPage = () => {
     </div>
   );
 };
-
-

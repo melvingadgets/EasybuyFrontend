@@ -26,6 +26,29 @@ export type AppUser = {
   role?: UserRole | string;
 };
 
+export type FinanceProviderInfo = {
+  slug: string;
+  displayName: string;
+};
+
+export type DownPaymentThreshold = {
+  minPrice: number;
+  percentage: number;
+};
+
+export type DownPaymentRule =
+  | {
+      type: "fixed_per_model";
+    }
+  | {
+      type: "price_threshold";
+      thresholds: DownPaymentThreshold[];
+    }
+  | {
+      type: "flat";
+      percentage: number;
+    };
+
 export type EasyBoughtItem = {
   _id: string;
   IphoneModel: string;
@@ -35,8 +58,8 @@ export type EasyBoughtItem = {
   downPayment: number;
   loanedAmount: number;
   PhonePrice: number;
-  monthlyPlan?: 1 | 2 | 3;
-  weeklyPlan?: 4 | 8 | 12;
+  monthlyPlan?: number;
+  weeklyPlan?: number;
   UserEmail?: string;
 };
 
@@ -45,7 +68,7 @@ export type EasyBuyCatalogItem = {
   imageUrl: string;
   capacities: string[];
   allowedPlans: Array<"Monthly" | "Weekly">;
-  downPaymentPercentage: 40 | 60;
+  downPaymentPercentage: number;
   pricesByCapacity?: Record<string, number>;
 };
 
@@ -54,11 +77,13 @@ export type EasyBuyPlanRules = {
   weeklyDurations: number[];
   monthlyMarkupMultipliers: Record<string, number>;
   weeklyMarkupMultipliers: Record<string, number>;
+  downPaymentRule?: DownPaymentRule;
 };
 
 export type EasyBuyCatalogResponse = {
   models: EasyBuyCatalogItem[];
   planRules: EasyBuyPlanRules;
+  provider?: string;
 };
 
 export type EasyBuyPricingModel = {
@@ -210,6 +235,7 @@ export type PublicEasyBuyRequest = {
   iphoneModel: string;
   capacity: string;
   plan: "Monthly" | "Weekly";
+  provider?: string;
   status: PublicEasyBuyRequestStatus;
   rejectionReason?: string;
   reviewedAt?: string;
@@ -236,9 +262,43 @@ export type PublicEasyBuyAbandonedDraft = {
   iphoneModel?: string;
   capacity?: string;
   plan?: "Monthly" | "Weekly";
+  provider?: string;
   currentStep?: 1 | 2 | 3;
   createdAt?: string;
   updatedAt?: string;
+};
+
+export type PublicEasyBuyAnalyticsWindow = {
+  users: number;
+  visits: number;
+  startAt: string;
+};
+
+export type PublicEasyBuyAnalyticsSource = {
+  source: string;
+  users: number;
+  visits: number;
+};
+
+export type PublicEasyBuyAnalyticsReferrer = {
+  referrerHost: string;
+  users: number;
+  visits: number;
+};
+
+export type PublicEasyBuyAnalytics = {
+  landingPath: string;
+  provider?: string | null;
+  queriedAt: string;
+  counts: {
+    lastMinute: PublicEasyBuyAnalyticsWindow;
+    lastHour: PublicEasyBuyAnalyticsWindow;
+    lastDay: PublicEasyBuyAnalyticsWindow;
+    lastWeek: PublicEasyBuyAnalyticsWindow;
+    lastMonth: PublicEasyBuyAnalyticsWindow;
+  };
+  topSources: PublicEasyBuyAnalyticsSource[];
+  topReferrers: PublicEasyBuyAnalyticsReferrer[];
 };
 
 export type PaginationMeta = {

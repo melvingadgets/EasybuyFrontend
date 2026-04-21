@@ -14,6 +14,7 @@ import { AdminReceiptApprovalsPage } from "./pages/AdminReceiptApprovalsPage";
 import { SuperAdminPage } from "./pages/SuperAdminPage";
 import { SuperAdminDateMaintenancePage } from "./pages/SuperAdminDateMaintenancePage";
 import { SuperAdminPricingPage } from "./pages/SuperAdminPricingPage";
+import { PublicEasyBuyRequestPage } from "./pages/PublicEasyBuyRequestPage";
 import { PublicEasyBuyVerifyPage } from "./pages/PublicEasyBuyVerifyPage";
 import { SuperAdminPublicRequestsPage } from "./pages/SuperAdminPublicRequestsPage";
 import { SuperAdminAbandonedDraftsPage } from "./pages/SuperAdminAbandonedDraftsPage";
@@ -26,7 +27,7 @@ const App = () => {
     <>
       <GlobalLoadingOverlay minDurationMs={150} />
       <Routes>
-        <Route path="/apply" element={<NotFoundPage />} />
+        <Route path="/apply" element={<PublicEasyBuyRequestPage />} />
         <Route path="/apply/verify" element={<PublicEasyBuyVerifyPage />} />
 
         <Route element={<Layout />}>

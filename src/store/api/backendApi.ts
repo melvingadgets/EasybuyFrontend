@@ -11,6 +11,7 @@ import type {
   EasyBoughtItem,
   PendingReceiptItem,
   PaginationMeta,
+  PublicEasyBuyAnalytics,
   PublicEasyBuyAbandonedDraft,
   PublicEasyBuyRequest,
   ReceiptUploadedDatePreview,
@@ -155,6 +156,7 @@ export const backendApi = createApi({
     "Maintenance",
     "PublicEasyBuyRequests",
     "PublicEasyBuyAbandonedDrafts",
+    "PublicEasyBuyAnalytics",
   ],
   endpoints: (builder) => ({
     getCurrentUser: builder.query<ApiSuccess<CurrentUser>, void>({
@@ -399,6 +401,24 @@ export const backendApi = createApi({
       providesTags: [{ type: "PublicEasyBuyAbandonedDrafts", id: "LIST" }],
     }),
 
+    getSuperAdminPublicEasyBuyAnalytics: builder.query<
+      ApiSuccess<PublicEasyBuyAnalytics>,
+      { landingPath?: string; provider?: string } | void
+    >({
+      query: (params) => {
+        const query = new URLSearchParams();
+        if (params?.landingPath) query.set("landingPath", params.landingPath);
+        if (params?.provider) query.set("provider", params.provider);
+
+        const suffix = query.toString() ? `?${query.toString()}` : "";
+        return {
+          url: `/api/v1/superadmin/public-easybuy-analytics${suffix}`,
+          suppressErrorToast: true,
+        };
+      },
+      providesTags: [{ type: "PublicEasyBuyAnalytics", id: "OVERVIEW" }],
+    }),
+
     approveSuperAdminPublicEasyBuyRequest: builder.mutation<
       ApiSuccess<PublicEasyBuyRequest>,
       { requestId: string; reason?: string }
@@ -472,6 +492,7 @@ export const {
   useUpdateEasyBoughtItemCreatedDateMutation,
   useGetSuperAdminPublicEasyBuyRequestsQuery,
   useGetSuperAdminAbandonedPublicEasyBuyDraftsQuery,
+  useGetSuperAdminPublicEasyBuyAnalyticsQuery,
   useApproveSuperAdminPublicEasyBuyRequestMutation,
   useRejectSuperAdminPublicEasyBuyRequestMutation,
   useConvertSuperAdminPublicEasyBuyRequestMutation,
