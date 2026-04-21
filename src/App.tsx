@@ -14,6 +14,7 @@ import { AdminReceiptApprovalsPage } from "./pages/AdminReceiptApprovalsPage";
 import { SuperAdminPage } from "./pages/SuperAdminPage";
 import { SuperAdminDateMaintenancePage } from "./pages/SuperAdminDateMaintenancePage";
 import { SuperAdminPricingPage } from "./pages/SuperAdminPricingPage";
+import { SuperAdminPublicAnalyticsPage } from "./pages/SuperAdminPublicAnalyticsPage";
 import { PublicEasyBuyRequestPage } from "./pages/PublicEasyBuyRequestPage";
 import { PublicEasyBuyVerifyPage } from "./pages/PublicEasyBuyVerifyPage";
 import { SuperAdminPublicRequestsPage } from "./pages/SuperAdminPublicRequestsPage";
@@ -66,6 +67,7 @@ const App = () => {
           <Route element={<ProtectedRoute allowedRoles={["SuperAdmin"]} />}>
             <Route path="/superadmin" element={<SuperAdminPage />} />
             <Route path="/superadmin/pricing" element={<SuperAdminPricingPage />} />
+            <Route path="/superadmin/public-analytics" element={<SuperAdminPublicAnalyticsPage />} />
             <Route path="/superadmin/public-requests" element={<SuperAdminPublicRequestsPage />} />
             <Route path="/superadmin/abandoned-drafts" element={<SuperAdminAbandonedDraftsPage />} />
             <Route path="/superadmin/date-maintenance" element={<SuperAdminDateMaintenancePage />} />

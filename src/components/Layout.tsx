@@ -9,6 +9,7 @@ import {
   FaBoxOpen,
   FaCalendarAlt,
   FaCheckCircle,
+  FaChartLine,
   FaMoon,
   FaPlusSquare,
   FaReceipt,
@@ -45,6 +46,7 @@ const navItems = [
   { to: "/create-item", label: "Create Item", icon: FaPlusSquare, authOnly: true, roles: ["Admin"] },
   { to: "/superadmin", label: "Super Admin", icon: FaUserCog, authOnly: true, roles: ["SuperAdmin"] },
   { to: "/superadmin/pricing", label: "Pricing", icon: FaBoxOpen, authOnly: true, roles: ["SuperAdmin"] },
+  { to: "/superadmin/public-analytics", label: "Public Analytics", icon: FaChartLine, authOnly: true, roles: ["SuperAdmin"] },
   { to: "/superadmin/public-requests", label: "Public Requests", icon: FaReceipt, authOnly: true, roles: ["SuperAdmin"] },
   { to: "/superadmin/abandoned-drafts", label: "Abandoned Drafts", icon: FaReceipt, authOnly: true, roles: ["SuperAdmin"] },
 ] as NavItem[];

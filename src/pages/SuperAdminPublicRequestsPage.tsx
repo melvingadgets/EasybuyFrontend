@@ -11,7 +11,6 @@ import {
   useApproveSuperAdminPublicEasyBuyRequestMutation,
   useConvertSuperAdminPublicEasyBuyRequestMutation,
   useGetSuperAdminPublicEasyBuyRequestsQuery,
-  useGetSuperAdminPublicEasyBuyAnalyticsQuery,
   useRejectSuperAdminPublicEasyBuyRequestMutation,
 } from "../store/api/backendApi";
 import type { PublicEasyBuyRequest } from "../types/api";
@@ -34,8 +33,6 @@ const formatInputWithCommas = (value: string) => {
   return decimals.length ? `${formattedInteger}.${decimals}` : formattedInteger;
 };
 
-const formatCount = (value: number) => new Intl.NumberFormat("en-US").format(Number(value || 0));
-
 export const SuperAdminPublicRequestsPage = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
@@ -56,34 +53,18 @@ export const SuperAdminPublicRequestsPage = () => {
     limit: 100,
     page: 1,
   });
-  const analyticsQuery = useGetSuperAdminPublicEasyBuyAnalyticsQuery({
-    landingPath: "/apply",
-  });
   const [approveRequest] = useApproveSuperAdminPublicEasyBuyRequestMutation();
   const [rejectRequest] = useRejectSuperAdminPublicEasyBuyRequestMutation();
   const [convertRequest] = useConvertSuperAdminPublicEasyBuyRequestMutation();
 
   const loading = requestsQuery.isLoading;
-  const analyticsLoading = analyticsQuery.isLoading;
   const errorMessage = getRtkErrorMessage(
     requestsQuery.error as any,
     "Failed to load public EasyBuy requests"
   );
-  const analyticsErrorMessage = getRtkErrorMessage(
-    analyticsQuery.error as any,
-    "Failed to load public EasyBuy analytics"
-  );
 
   const requests = useMemo(() => requestsQuery.data?.data || [], [requestsQuery.data?.data]);
   const pagination = requestsQuery.data?.pagination;
-  const analytics = analyticsQuery.data?.data;
-  const analyticsCards = [
-    { label: "Last Minute", value: analytics?.counts?.lastMinute },
-    { label: "Last Hour", value: analytics?.counts?.lastHour },
-    { label: "Last Day", value: analytics?.counts?.lastDay },
-    { label: "Last Week", value: analytics?.counts?.lastWeek },
-    { label: "Last Month", value: analytics?.counts?.lastMonth },
-  ];
 
   const onApprove = async (requestId: string) => {
     setActionLoadingId(requestId);
@@ -160,9 +141,6 @@ export const SuperAdminPublicRequestsPage = () => {
           <p className="mt-1 text-sm text-muted-foreground">
             Review verified requests from public traffic and approve/reject/convert as SuperAdmin.
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Analytics below are for the public EasyBuy landing path <span className="font-medium text-foreground">/apply</span>.
-          </p>
 
           <div className="mt-4 grid gap-3 md:grid-cols-3">
             <input
@@ -195,100 +173,6 @@ export const SuperAdminPublicRequestsPage = () => {
           {errorMessage && (
             <div className="mt-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{errorMessage}</div>
           )}
-        </div>
-
-        <div className="rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-soft sm:p-6">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold">Traffic Overview</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Unique users and total page views for the EasyBuy public request page.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => analyticsQuery.refetch()}
-              className="rounded-md border border-border bg-background px-3 py-2 text-xs hover:bg-muted"
-            >
-              Refresh Analytics
-            </button>
-          </div>
-
-          {analyticsErrorMessage && (
-            <div className="mt-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-              {analyticsErrorMessage}
-            </div>
-          )}
-
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-            {analyticsCards.map((item) => (
-              <article key={item.label} className="rounded-xl border border-border bg-background p-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{item.label}</p>
-                <p className="mt-2 text-2xl font-semibold">
-                  {analyticsLoading && !item.value ? "..." : formatCount(item.value?.users || 0)}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Users
-                  <span className="mx-1">|</span>
-                  {formatCount(item.value?.visits || 0)} visits
-                </p>
-              </article>
-            ))}
-          </div>
-
-          <div className="mt-5 grid gap-4 lg:grid-cols-2">
-            <article className="rounded-xl border border-border bg-background p-4">
-              <h3 className="text-sm font-semibold">Top Sources</h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                UTM source first, otherwise referrer host, otherwise direct.
-              </p>
-              <div className="mt-3 space-y-2">
-                {(analytics?.topSources || []).map((source) => (
-                  <div
-                    key={source.source}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">{source.source || "direct"}</p>
-                      <p className="text-xs text-muted-foreground">{formatCount(source.visits)} visits</p>
-                    </div>
-                    <p className="text-sm font-semibold">{formatCount(source.users)} users</p>
-                  </div>
-                ))}
-                {!analyticsLoading && !(analytics?.topSources || []).length && (
-                  <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
-                    No source data yet.
-                  </p>
-                )}
-              </div>
-            </article>
-
-            <article className="rounded-xl border border-border bg-background p-4">
-              <h3 className="text-sm font-semibold">Top Referrers</h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                External domains that sent traffic to the public EasyBuy page.
-              </p>
-              <div className="mt-3 space-y-2">
-                {(analytics?.topReferrers || []).map((referrer) => (
-                  <div
-                    key={referrer.referrerHost}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">{referrer.referrerHost}</p>
-                      <p className="text-xs text-muted-foreground">{formatCount(referrer.visits)} visits</p>
-                    </div>
-                    <p className="text-sm font-semibold">{formatCount(referrer.users)} users</p>
-                  </div>
-                ))}
-                {!analyticsLoading && !(analytics?.topReferrers || []).length && (
-                  <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
-                    No referrer data yet.
-                  </p>
-                )}
-              </div>
-            </article>
-          </div>
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-soft sm:p-6">

@@ -1,10 +1,12 @@
 import { FormEvent, useEffect, useState } from "react";
+import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { api } from "../lib/api";
 import { auth } from "../lib/auth";
 import ClipLoader from "react-spinners/ClipLoader";
 import { FaSignInAlt } from "react-icons/fa";
+
+const AUTH_SERVICE_LOGIN_URL = "https://easybuytrackerbackend.onrender.com/api/v1/user/login-user";
 
 export const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -28,13 +30,24 @@ export const LoginPage = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { data } = await api.post("/api/v1/user/login-user", { email, password });
+      const { data } = await axios.post(AUTH_SERVICE_LOGIN_URL, {
+        email,
+        password,
+      });
       const token = data?.data;
       if (typeof token === "string") {
         auth.setToken(token);
       }
       toast.success(data?.message || "Login successful");
       navigate("/dashboard");
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.reason ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Login failed";
+      toast.error(String(message));
     } finally {
       setLoading(false);
     }

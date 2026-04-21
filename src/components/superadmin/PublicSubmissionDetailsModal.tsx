@@ -80,8 +80,10 @@ const renderValueForDisplay = (key: string, value: unknown): string => {
 };
 
 const getOrderedEntries = (item: Record<string, unknown>) => {
-  const entries = Object.entries(item).filter(([, value]) => !isSkippableValue(value));
-  const ordered = ORDERED_KEYS.flatMap((key) => (Object.prototype.hasOwnProperty.call(item, key) ? [[key, item[key]]] : []));
+  const entries = Object.entries(item).filter(([, value]) => !isSkippableValue(value)) as Array<[string, unknown]>;
+  const ordered = ORDERED_KEYS.flatMap((key): Array<[string, unknown]> =>
+    Object.prototype.hasOwnProperty.call(item, key) ? [[key, item[key]]] : []
+  );
   const extras = entries.filter(([key]) => !ORDERED_KEYS.includes(key));
   return [...ordered, ...extras];
 };

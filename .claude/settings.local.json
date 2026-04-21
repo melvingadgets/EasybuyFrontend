@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "additionalDirectories": [
+      "C:\\Users\\HP\\Desktop\\easybuytracker\\Utils\\providers",
+      "C:\\Users\\HP\\Desktop"
+    ],
+    "allow": [
+      "Bash(find /c/Users/HP/Desktop -maxdepth 2 -name package.json -path *auth*)",
+      "Read(//c/Users/HP/**)"
+    ]
+  }
+}

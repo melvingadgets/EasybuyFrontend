@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import BounceLoader from "react-spinners/BounceLoader";
-import loaderImage from "../IMG_1938 (1).png";
+import loaderImage from "../../easybuy-next/src/IMG_1938 (1).png";
 import { useGlobalLoadingCount } from "../lib/globalLoading";
 
 type GlobalLoadingOverlayProps = {
