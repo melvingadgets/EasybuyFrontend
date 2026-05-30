@@ -1,7 +1,7 @@
 import { ApplyForm } from "@/components/apply/ApplyForm";
 import type { EasyBuyCatalogResponse, FinanceProviderInfo } from "@/types/easybuy";
 
-const BACKEND_URL = "https://store-v2j1.onrender.com";
+const BACKEND_URL = "https://easybuytrackerbackend-bocj.onrender.com";
 const FALLBACK_PROVIDERS: FinanceProviderInfo[] = [{ slug: "aurapay", displayName: "AuraPay" }];
 
 async function getProviders(): Promise<FinanceProviderInfo[]> {

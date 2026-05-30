@@ -6,7 +6,7 @@ import { auth } from "../lib/auth";
 import ClipLoader from "react-spinners/ClipLoader";
 import { FaSignInAlt } from "react-icons/fa";
 
-const AUTH_SERVICE_LOGIN_URL = "https://store-v2j1.onrender.com/api/v1/user/login-user";
+const AUTH_SERVICE_LOGIN_URL = "https://easybuytrackerbackend-bocj.onrender.com/api/v1/user/login-user";
 
 export const LoginPage = () => {
   const [email, setEmail] = useState("");
