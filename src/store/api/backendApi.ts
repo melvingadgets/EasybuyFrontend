@@ -1,4 +1,4 @@
-﻿import { beginGlobalLoad } from "../../lib/globalLoading";
+import { beginGlobalLoad } from "../../lib/globalLoading";
 import { auth } from "../../lib/auth";
 import type {
   ApiSuccess,
@@ -40,8 +40,8 @@ type ExtendedFetchArgs = FetchArgs & {
 const apiMode = String(import.meta.env.VITE_API_MODE || "online").trim().toLowerCase();
 const envBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 const localUrl = String(import.meta.env.VITE_API_LOCAL_URL || "http://localhost:552").trim();
-const onlineUrl = String(import.meta.env.VITE_API_ONLINE_URL || "https://easybuytrackerbackend.onrender.com").trim();
-const onlineFallbackUrl = "https://easybuytrackerbackend.onrender.com";
+const onlineUrl = String(import.meta.env.VITE_API_ONLINE_URL || "https://store-v2j1.onrender.com").trim();
+const onlineFallbackUrl = "https://store-v2j1.onrender.com";
 
 const isLocalhostUrl = (value: string) => {
   const normalized = String(value || "").trim().toLowerCase();

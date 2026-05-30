@@ -20,9 +20,9 @@ const apiMode = String(import.meta.env.VITE_API_MODE || "online").trim().toLower
 const envBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 const localUrl = String(import.meta.env.VITE_API_LOCAL_URL || "http://localhost:552").trim();
 const onlineUrl = String(
-  import.meta.env.VITE_API_ONLINE_URL || "https://easybuytrackerbackend.onrender.com"
+  import.meta.env.VITE_API_ONLINE_URL || "https://store-v2j1.onrender.com"
 ).trim();
-const onlineFallbackUrl = "https://easybuytrackerbackend.onrender.com";
+const onlineFallbackUrl = "https://store-v2j1.onrender.com";
 
 const isLocalhostUrl = (value: string) => {
   const normalized = String(value || "").trim().toLowerCase();
