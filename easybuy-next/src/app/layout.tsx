@@ -3,6 +3,7 @@ import { Manrope, Sora } from "next/font/google";
 import "./globals.css";
 import { ToasterProvider } from "@/components/ToasterProvider";
 import { GlobalLoadingOverlay } from "@/components/GlobalLoadingOverlay";
+import { MelvinBridge } from "@/components/MelvinBridge";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -68,6 +69,7 @@ export default function RootLayout({
       <body className={`${manrope.variable} ${sora.variable} antialiased`}>
         <GlobalLoadingOverlay minDurationMs={150} />
         <ToasterProvider />
+        <MelvinBridge />
         {children}
       </body>
     </html>
