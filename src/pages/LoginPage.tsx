@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { auth } from "../lib/auth";
 import ClipLoader from "react-spinners/ClipLoader";
 import { FaSignInAlt } from "react-icons/fa";
+import { isEmbeddedInMelvin } from "../lib/melvinBridge";
 
 const AUTH_SERVICE_LOGIN_URL = "https://easybuytrackerbackend-bocj.onrender.com/api/v1/user/login-user";
 
@@ -15,6 +16,10 @@ export const LoginPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Inside Melvin OS the frame can be shorter than the login card, so the page must stay
+    // scrollable or the Login button ends up out of reach.
+    if (isEmbeddedInMelvin) return;
+
     const previousBodyOverflow = document.body.style.overflow;
     const previousHtmlOverflow = document.documentElement.style.overflow;
     document.body.style.overflow = "hidden";

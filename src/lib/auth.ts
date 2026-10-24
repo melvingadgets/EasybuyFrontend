@@ -1,7 +1,25 @@
+import { getMelvinBridgeToken, isEmbeddedInMelvin } from "./melvinBridge";
+
 const TOKEN_KEY = "easybuytracker_token";
 const SESSION_TOKEN_KEY = "easybuytracker_session_token";
 const LEGACY_SESSION_TOKEN_KEY = "easybuytracker_sessiontoken";
 type UserRole = "Admin" | "User" | "SuperAdmin" | null;
+
+// Inside Melvin OS the session comes from the bridge and lives in memory only.
+// Everywhere else it's the app's own token in localStorage.
+const currentToken = (): string | null => {
+  if (isEmbeddedInMelvin) {
+    const bridged = getMelvinBridgeToken();
+    if (bridged) return bridged;
+  }
+  return localStorage.getItem(TOKEN_KEY);
+};
+
+// Never evict the bridge token from localStorage — it was never stored there.
+const forgetStoredToken = (): void => {
+  if (isEmbeddedInMelvin && getMelvinBridgeToken()) return;
+  localStorage.removeItem(TOKEN_KEY);
+};
 
 type JwtPayload = {
   role?: "Admin" | "User" | "SuperAdmin";
@@ -28,7 +46,7 @@ const isTokenExpired = (payload: JwtPayload | null): boolean => {
 };
 
 export const auth = {
-  getToken: () => localStorage.getItem(TOKEN_KEY),
+  getToken: () => currentToken(),
   setToken: (token: string) => localStorage.setItem(TOKEN_KEY, token),
   clearToken: () => {
     localStorage.removeItem(TOKEN_KEY);
@@ -39,21 +57,21 @@ export const auth = {
     sessionStorage.removeItem(LEGACY_SESSION_TOKEN_KEY);
   },
   isLoggedIn: () => {
-    const token = localStorage.getItem(TOKEN_KEY);
+    const token = currentToken();
     if (!token) return false;
     const payload = parseJwtPayload(token);
     if (!payload || isTokenExpired(payload)) {
-      localStorage.removeItem(TOKEN_KEY);
+      forgetStoredToken();
       return false;
     }
     return true;
   },
   getRole: (): UserRole => {
-    const token = localStorage.getItem(TOKEN_KEY);
+    const token = currentToken();
     if (!token) return null;
     const payload = parseJwtPayload(token);
     if (!payload || isTokenExpired(payload)) {
-      localStorage.removeItem(TOKEN_KEY);
+      forgetStoredToken();
       return null;
     }
     return payload?.role || null;

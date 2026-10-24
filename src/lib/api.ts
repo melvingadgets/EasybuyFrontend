@@ -2,6 +2,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { auth } from "./auth";
 import { beginGlobalLoad } from "./globalLoading";
+import { isEmbeddedInMelvin, notifyMelvinTokenExpired } from "./melvinBridge";
 
 type RequestMeta = {
   __stopGlobalLoad?: () => void;
@@ -78,6 +79,11 @@ api.interceptors.response.use(
     const canceled = error?.code === "ERR_CANCELED" || axios.isCancel(error);
     if (canceled) {
       return Promise.reject(error);
+    }
+
+    // Embedded: a 401 means the bridge token lapsed — ask the OS for a fresh one.
+    if (isEmbeddedInMelvin && error?.response?.status === 401) {
+      notifyMelvinTokenExpired();
     }
 
     if (!config?.suppressErrorToast) {

@@ -129,3 +129,14 @@
   animation: loader-grow-size 1.6s ease-in-out infinite;
   transform-origin: center;
 }
+
+/* Inside Melvin OS the phone frame hides scrollbars, so the embedded page does too. */
+html.melvin-embed,
+html.melvin-embed body {
+  scrollbar-width: none;
+}
+
+html.melvin-embed::-webkit-scrollbar,
+html.melvin-embed body::-webkit-scrollbar {
+  display: none;
+}

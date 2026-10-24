@@ -22,11 +22,13 @@ import { SuperAdminAbandonedDraftsPage } from "./pages/SuperAdminAbandonedDrafts
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ForbiddenPage } from "./pages/ForbiddenPage";
 import { GlobalLoadingOverlay } from "./components/GlobalLoadingOverlay";
+import { MelvinBridge } from "./components/MelvinBridge";
 
 const App = () => {
   return (
     <>
       <GlobalLoadingOverlay minDurationMs={150} />
+      <MelvinBridge />
       <Routes>
         <Route path="/apply" element={<PublicEasyBuyRequestPage />} />
         <Route path="/apply/verify" element={<PublicEasyBuyVerifyPage />} />
