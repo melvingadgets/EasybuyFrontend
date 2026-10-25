@@ -2,9 +2,11 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { auth } from "./auth";
 import { beginGlobalLoad } from "./globalLoading";
-import { isEmbeddedInMelvin, notifyMelvinTokenExpired } from "./melvinBridge";
+import { isMelvinBridgeToken, reportBridgeResponse } from "./melvinBridge";
 
 type RequestMeta = {
+  // Set when the request carried the Melvin OS token, so its answer can teach the bridge gate.
+  __bridgeToken?: string;
   __stopGlobalLoad?: () => void;
   suppressGlobalLoader?: boolean;
   suppressErrorToast?: boolean;
@@ -63,13 +65,16 @@ api.interceptors.request.use((config) => {
   const token = auth.getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+    if (isMelvinBridgeToken(token)) meta.__bridgeToken = token;
   }
   return config;
 });
 
 api.interceptors.response.use(
   (response) => {
-    stopGlobalLoad(response.config as RequestMeta);
+    const meta = response.config as RequestMeta;
+    stopGlobalLoad(meta);
+    if (meta.__bridgeToken) reportBridgeResponse(meta.__bridgeToken, response.status);
     return response;
   },
   (error) => {
@@ -81,12 +86,14 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Embedded: a 401 means the bridge token lapsed — ask the OS for a fresh one.
-    if (isEmbeddedInMelvin && error?.response?.status === 401) {
-      notifyMelvinTokenExpired();
-    }
+    // The OS token got an answer: let the gate learn from it (expiry → ask the OS for a fresh one;
+    // refused again → fall back to this app's own login). Either way the gate is handling a 401,
+    // so don't also show "request failed".
+    const status = error?.response?.status;
+    const handledByGate =
+      Boolean(config?.__bridgeToken) && typeof status === "number" && reportBridgeResponse(config!.__bridgeToken!, status);
 
-    if (!config?.suppressErrorToast) {
+    if (!config?.suppressErrorToast && !handledByGate) {
       const message =
         error?.response?.data?.message ||
         error?.response?.data?.error ||

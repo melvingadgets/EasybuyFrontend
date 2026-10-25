@@ -1,3 +1,5 @@
+import { createBridgeGate } from "./bridgeGate";
+
 export type MelvinOutboundType =
   | "melvin:hello"
   | "melvin:ready"
@@ -57,7 +59,8 @@ export const notifyMelvinTokenExpired = () => postToMelvin("melvin:token-expired
 // The OS replies to our "melvin:hello" with "melvin:auth" carrying the session.
 // We keep the token in memory ONLY — never localStorage or the URL — so it can't
 // outlive the frame or leak to another site.
-let bridgeToken: string | null = null;
+// The gate also decides whether this app's backend accepts the token at all (see bridgeGate.ts).
+const gate = createBridgeGate();
 let bridgeUser: MelvinBridgeUser | null = null;
 let bridgeStarted = false;
 
@@ -67,8 +70,30 @@ const emitAuthChange = (): void => {
   for (const listener of listeners) listener();
 };
 
-export const getMelvinBridgeToken = (): string | null => bridgeToken;
-export const getMelvinBridgeUser = (): MelvinBridgeUser | null => bridgeUser;
+/** The OS token, or null before sign-in and once this backend has refused it. */
+export const getMelvinBridgeToken = (): string | null => gate.token();
+export const getMelvinBridgeUser = (): MelvinBridgeUser | null => (gate.token() ? bridgeUser : null);
+
+/** True when `token` is the OS token this app is currently allowed to send. */
+export const isMelvinBridgeToken = (token: string | null | undefined): token is string =>
+  Boolean(token) && token === gate.token();
+
+/**
+ * Report how the backend answered a request that carried the OS token. Returns true when it was a
+ * 401 the gate is handling (a refresh was requested, or the app is falling back to its own login),
+ * so the caller can skip its own "request failed" message.
+ */
+export const reportBridgeResponse = (usedToken: string, status: number): boolean => {
+  if (status !== 401) {
+    gate.accepted(usedToken);
+    return false;
+  }
+  const action = gate.unauthorized(usedToken);
+  if (action === "refresh") notifyMelvinTokenExpired();
+  // The token is now withheld, so listeners see it gone and the app goes back to its own login.
+  else if (action === "rejected") emitAuthChange();
+  return true;
+};
 
 /** Subscribe to bridge sign-in / sign-out. Returns an unsubscribe function. */
 export const onMelvinAuthChange = (listener: () => void): (() => void) => {
@@ -92,11 +117,11 @@ export const startMelvinAuthBridge = (): void => {
     if (!data || typeof data !== "object") return;
 
     if (data.type === "melvin:auth") {
-      bridgeToken = typeof data.token === "string" ? data.token : null;
+      gate.setToken(typeof data.token === "string" ? data.token : null);
       bridgeUser = (data.user as MelvinBridgeUser | null) ?? null;
       emitAuthChange();
     } else if (data.type === "melvin:logout") {
-      bridgeToken = null;
+      gate.setToken(null);
       bridgeUser = null;
       emitAuthChange();
     }

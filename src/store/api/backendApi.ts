@@ -1,5 +1,6 @@
 import { beginGlobalLoad } from "../../lib/globalLoading";
 import { auth } from "../../lib/auth";
+import { isMelvinBridgeToken, reportBridgeResponse } from "../../lib/melvinBridge";
 import type {
   ApiSuccess,
   CurrentUser,
@@ -119,13 +120,23 @@ const baseQueryWithUx: BaseQueryFn<string | ExtendedFetchArgs, unknown, FetchBas
   const { suppressGlobalLoader = false, suppressErrorToast = false, ...queryArgs } = request;
 
   const stopLoading = suppressGlobalLoader ? undefined : beginGlobalLoad();
+  // Which token this request will carry, so its answer can teach the Melvin OS gate (bridgeGate.ts).
+  const sentToken = auth.getToken();
+  const bridgeToken = isMelvinBridgeToken(sentToken) ? sentToken : null;
 
   try {
     const result = await rawBaseQuery(queryArgs as FetchArgs, api, extraOptions);
 
+    let handledByGate = false;
+    if (bridgeToken && !api.signal.aborted) {
+      const status = result.error ? result.error.status : 200;
+      if (typeof status === "number") handledByGate = reportBridgeResponse(bridgeToken, status);
+    }
+
     if (
       result.error &&
       !suppressErrorToast &&
+      !handledByGate &&
       !api.signal.aborted &&
       !isAbortError(result.error)
     ) {
