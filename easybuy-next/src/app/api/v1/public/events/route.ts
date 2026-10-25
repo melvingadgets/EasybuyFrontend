@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-
-const BACKEND_URL = "https://easybuytrackerbackend-bocj.onrender.com";
+import { BACKEND_URL } from "@/lib/backendUrl";
 
 export async function POST(request: NextRequest) {
   try {

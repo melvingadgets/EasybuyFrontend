@@ -6,8 +6,10 @@ import { auth } from "../lib/auth";
 import ClipLoader from "react-spinners/ClipLoader";
 import { FaSignInAlt } from "react-icons/fa";
 import { isEmbeddedInMelvin } from "../lib/melvinBridge";
+import { api } from "../lib/api";
 
-const AUTH_SERVICE_LOGIN_URL = "https://easybuytrackerbackend-bocj.onrender.com/api/v1/user/login-user";
+// Same backend as every other call (it used to be a second hardcoded copy of the URL).
+const loginUrl = () => `${String(api.defaults.baseURL).replace(/\/+$/, "")}/api/v1/user/login-user`;
 
 export const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -35,7 +37,7 @@ export const LoginPage = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { data } = await axios.post(AUTH_SERVICE_LOGIN_URL, {
+      const { data } = await axios.post(loginUrl(), {
         email,
         password,
       });

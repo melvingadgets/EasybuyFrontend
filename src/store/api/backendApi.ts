@@ -41,8 +41,8 @@ type ExtendedFetchArgs = FetchArgs & {
 const apiMode = String(import.meta.env.VITE_API_MODE || "online").trim().toLowerCase();
 const envBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 const localUrl = String(import.meta.env.VITE_API_LOCAL_URL || "http://localhost:552").trim();
-const onlineUrl = String(import.meta.env.VITE_API_ONLINE_URL || "https://easybuytrackerbackend-bocj.onrender.com").trim();
-const onlineFallbackUrl = "https://easybuytrackerbackend-bocj.onrender.com";
+const onlineUrl = String(import.meta.env.VITE_API_ONLINE_URL || "https://easybuy-api-production.up.railway.app").trim();
+const onlineFallbackUrl = "https://easybuy-api-production.up.railway.app";
 
 const isLocalhostUrl = (value: string) => {
   const normalized = String(value || "").trim().toLowerCase();
