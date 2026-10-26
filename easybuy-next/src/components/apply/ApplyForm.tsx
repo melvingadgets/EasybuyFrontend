@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import ClipLoader from "react-spinners/ClipLoader";
 import { FormLayout } from "@/components/apply/FormLayout";
+import { MyApplications } from "@/components/apply/MyApplications";
 import { StepFourReview } from "@/components/apply/steps/StepFourReview";
 import { StepOneBasicInfo } from "@/components/apply/steps/StepOneBasicInfo";
 import { StepTwoPlan } from "@/components/apply/steps/StepTwoPlan";
@@ -17,8 +18,9 @@ import {
 import type { ApplyFormState, ApplyStep, PlanType } from "@/components/apply/types";
 import { api } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
+import { getMelvinBridgeToken, getMelvinBridgeUser, onMelvinAuthChange } from "@/lib/melvinBridge";
 import { initializeTikTokPixel, trackTikTokEvent, trackTikTokPageView } from "@/lib/tiktokPixel";
-import type { EasyBuyCatalogResponse, FinanceProviderInfo } from "@/types/easybuy";
+import type { EasyBuyCatalogResponse, EasyBuyServiceFeeRule, FinanceProviderInfo } from "@/types/easybuy";
 
 type PublicCatalogResponse = {
   message: string;
@@ -68,9 +70,10 @@ type Props = {
   initialProvider: string;
   initialCatalog: EasyBuyCatalogResponse["models"];
   initialPlanRules: EasyBuyCatalogResponse["planRules"] | null;
+  initialServiceFee?: EasyBuyServiceFeeRule | null;
 };
 
-export function ApplyForm({ initialProviders, initialProvider, initialCatalog, initialPlanRules }: Props) {
+export function ApplyForm({ initialProviders, initialProvider, initialCatalog, initialPlanRules, initialServiceFee = null }: Props) {
   const pixelPageTrackedRef = useRef(false);
   const formStartTrackedRef = useRef(false);
   const [draftReady, setDraftReady] = useState(false);
@@ -83,6 +86,7 @@ export function ApplyForm({ initialProviders, initialProvider, initialCatalog, i
   const [submitting, setSubmitting] = useState(false);
   const [catalog, setCatalog] = useState<EasyBuyCatalogResponse["models"]>(initialCatalog);
   const [planRules, setPlanRules] = useState<EasyBuyCatalogResponse["planRules"] | null>(initialPlanRules);
+  const [serviceFee, setServiceFee] = useState<EasyBuyServiceFeeRule | null>(initialServiceFee);
   const [catalogError, setCatalogError] = useState("");
 
   // Track which provider the current catalog data belongs to so we skip
@@ -218,6 +222,7 @@ export function ApplyForm({ initialProviders, initialProvider, initialCatalog, i
         catalogForProviderRef.current = selectedProvider;
         setCatalog(models);
         setPlanRules(nextPlanRules);
+        setServiceFee(data?.serviceFee ?? null);
 
         setForm((prev) => {
           const found = models.find((item) => item.model === prev.iphoneModel);
@@ -405,6 +410,37 @@ export function ApplyForm({ initialProviders, initialProvider, initialCatalog, i
     if (weeks <= 0) return 0;
     return (calculatedLoanedAmount * multiplier) / weeks;
   }, [calculatedLoanedAmount, form.monthlyPlan, form.plan, form.weeklyPlan, planRules, selectedModel]);
+
+  // The EasyBuy service charge, shown before applying (Shortwork/RESELLER-PLAN.md §8b). Display
+  // only: EasyBuy computes the real amount, in kobo, when the request is converted.
+  const serviceCharge = useMemo(() => {
+    if (!serviceFee || !hasPlanAndDuration) return null;
+    const base = serviceFee.base === "price" ? phonePriceNumber : calculatedLoanedAmount;
+    const amount = Math.round(base * serviceFee.bps) / 10_000;
+    return {
+      amount,
+      percent: serviceFee.bps / 100,
+      onFinancedAmount: serviceFee.base === "financed",
+      dueAtCollection: calculatedDownPayment + amount,
+    };
+  }, [calculatedDownPayment, calculatedLoanedAmount, hasPlanAndDuration, phonePriceNumber, serviceFee]);
+
+  // Inside Melvin OS, a signed-in person's name and email are prefilled from the OS session, and
+  // the request is sent with their Melvin token so EasyBuy links it to them (and to a reseller who
+  // referred them). Only empty fields are filled; nothing typed is overwritten.
+  useEffect(() => {
+    const prefill = () => {
+      const user = getMelvinBridgeUser();
+      if (!user) return;
+      setForm((prev) => ({
+        ...prev,
+        fullName: prev.fullName || user.fullName || "",
+        email: prev.email || user.email || "",
+      }));
+    };
+    prefill();
+    return onMelvinAuthChange(prefill);
+  }, []);
 
   const setField = (field: keyof ApplyFormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -596,8 +632,10 @@ export function ApplyForm({ initialProviders, initialProvider, initialCatalog, i
 
     setSubmitting(true);
     try {
+      const melvinToken = getMelvinBridgeToken();
       const response = await api.post("/api/v1/public/easybuy-requests", payload, {
         suppressErrorToast: true,
+        ...(melvinToken ? { headers: { Authorization: `Bearer ${melvinToken}` } } : {}),
       } as any);
 
       const requestId = String(response?.data?.data?.requestId || "");
@@ -704,6 +742,7 @@ export function ApplyForm({ initialProviders, initialProvider, initialCatalog, i
             applyFormPatch({ downPayment: formatInputWithCommas(value) });
           }}
           onPreviewUnavailable={() => setPreviewUnavailable(true)}
+          serviceCharge={serviceCharge}
         />
       );
     }
@@ -715,9 +754,11 @@ export function ApplyForm({ initialProviders, initialProvider, initialCatalog, i
         downPaymentPercentage={downPaymentPercentage}
         minimumRequiredDownPayment={minimumRequiredDownPayment}
         calculatedNextPayment={calculatedNextPayment}
+        serviceCharge={serviceCharge}
       />
     );
   }, [
+    serviceCharge,
     availableCapacities,
     basicErrors,
     calculatedNextPayment,
@@ -746,6 +787,8 @@ export function ApplyForm({ initialProviders, initialProvider, initialCatalog, i
         {catalogError ? (
           <div className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{catalogError}</div>
         ) : null}
+
+        {step === 1 ? <MyApplications /> : null}
 
         {stepView}
 

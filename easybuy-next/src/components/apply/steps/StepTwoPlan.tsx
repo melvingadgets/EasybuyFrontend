@@ -26,15 +26,14 @@ type StepTwoPlanProps = {
   onPhonePriceChange: (value: string) => void;
   onDownPaymentChange: (value: string) => void;
   onPreviewUnavailable: () => void;
+  /** The EasyBuy service charge (Shortwork/RESELLER-PLAN.md §8b), when the backend publishes it. */
+  serviceCharge?: { amount: number; percent: number; onFinancedAmount: boolean } | null;
 };
 
 const inputBase = "w-full rounded-md border bg-background px-3 py-2.5 text-base focus:outline-none focus:ring-2";
 
 export function StepTwoPlan({
   form,
-  providers,
-  selectedProvider,
-  loadingProviders,
   catalog,
   loadingCatalog,
   selectedModel,
@@ -48,12 +47,12 @@ export function StepTwoPlan({
   downPaymentTooLow,
   downPaymentAbovePhonePrice,
   hasPlanAndDuration,
-  onProviderChange,
   onFormChange,
   onModelChange,
   onPhonePriceChange,
   onDownPaymentChange,
   onPreviewUnavailable,
+  serviceCharge,
 }: StepTwoPlanProps) {
   const isMonthly = form.plan === "Monthly";
   const isWeekly = form.plan === "Weekly";
@@ -69,30 +68,6 @@ export function StepTwoPlan({
   return (
     <div className="space-y-5 step-enter">
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2 sm:col-span-2">
-          <label htmlFor="provider" className="text-sm font-medium">
-            Payment Provider
-          </label>
-          <select
-            id="provider"
-            className={`${inputBase} border-input focus:ring-ring`}
-            value={selectedProvider}
-            onChange={(e) => onProviderChange(e.target.value)}
-            disabled={loadingProviders || !providers.length}
-          >
-            {providers.map((provider) => (
-              <option key={provider.slug} value={provider.slug}>
-                {provider.displayName}
-              </option>
-            ))}
-          </select>
-          <p className="text-sm text-muted-foreground">
-            {providers.length > 1
-              ? "Choose the provider to see the right plan and down payment rules."
-              : "Only one payment provider is currently available."}
-          </p>
-        </div>
-
         <div className="space-y-2 sm:col-span-2">
           <label htmlFor="iphone-model" className="text-sm font-medium">
             iPhone Model
@@ -269,6 +244,16 @@ export function StepTwoPlan({
             readOnly
           />
         </div>
+
+        {serviceCharge && hasPlanAndDuration ? (
+          <div className="space-y-1 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 sm:col-span-2">
+            <p className="flex items-center justify-between gap-3 text-sm font-medium text-amber-900">
+              <span>Service charge ({serviceCharge.percent}%{serviceCharge.onFinancedAmount ? " of the amount financed" : " of the phone price"})</span>
+              <span>{formatAmount(serviceCharge.amount)}</span>
+            </p>
+            <p className="text-xs text-amber-800">Paid with your down payment when you collect the phone. It isn't refundable.</p>
+          </div>
+        ) : null}
       </div>
     </div>
   );

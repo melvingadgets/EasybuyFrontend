@@ -7,14 +7,16 @@ type StepFourReviewProps = {
   downPaymentPercentage: number;
   minimumRequiredDownPayment: number;
   calculatedNextPayment: number;
+  /** The EasyBuy service charge (Shortwork/RESELLER-PLAN.md §8b), when the backend publishes it. */
+  serviceCharge?: { amount: number; percent: number; onFinancedAmount: boolean; dueAtCollection: number } | null;
 };
 
 export function StepFourReview({
   form,
-  providerName,
   downPaymentPercentage,
   minimumRequiredDownPayment,
   calculatedNextPayment,
+  serviceCharge,
 }: StepFourReviewProps) {
   const durationText =
     form.plan === "Monthly"
@@ -51,10 +53,6 @@ export function StepFourReview({
             <dd className="font-medium">{form.iphoneModel ? `${form.iphoneModel} (${form.capacity})` : "-"}</dd>
           </div>
           <div>
-            <dt className="text-sm text-muted-foreground">Provider</dt>
-            <dd className="font-medium">{providerName || "-"}</dd>
-          </div>
-          <div>
             <dt className="text-sm text-muted-foreground">Plan Type</dt>
             <dd className="font-medium">{form.plan || "-"}</dd>
           </div>
@@ -80,6 +78,20 @@ export function StepFourReview({
             <dt className="text-sm text-muted-foreground">Estimated Next Payment</dt>
             <dd className="font-medium">{formatAmount(Number(calculatedNextPayment.toFixed(2)))}</dd>
           </div>
+          {serviceCharge ? (
+            <>
+              <div>
+                <dt className="text-sm text-muted-foreground">
+                  Service Charge ({serviceCharge.percent}%{serviceCharge.onFinancedAmount ? " of amount financed" : ""}, non-refundable)
+                </dt>
+                <dd className="font-medium">{formatAmount(serviceCharge.amount)}</dd>
+              </div>
+              <div>
+                <dt className="text-sm text-muted-foreground">Due When You Collect</dt>
+                <dd className="font-medium">{formatAmount(serviceCharge.dueAtCollection)}</dd>
+              </div>
+            </>
+          ) : null}
 
         </dl>
       </div>

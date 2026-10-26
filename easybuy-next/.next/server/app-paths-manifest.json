@@ -1,9 +1,15 @@
 {
   "/_global-error/page": "app/_global-error/page.js",
   "/_not-found/page": "app/_not-found/page.js",
+  "/api/v1/public/easybuy-catalog/route": "app/api/v1/public/easybuy-catalog/route.js",
+  "/api/v1/public/easybuy-drafts/step/route": "app/api/v1/public/easybuy-drafts/step/route.js",
+  "/api/v1/public/easybuy-requests/route": "app/api/v1/public/easybuy-requests/route.js",
+  "/api/v1/public/events/route": "app/api/v1/public/events/route.js",
+  "/api/v1/public/providers/route": "app/api/v1/public/providers/route.js",
   "/apple-icon.png/route": "app/apple-icon.png/route.js",
   "/apply/page": "app/apply/page.js",
   "/icon.png/route": "app/icon.png/route.js",
   "/login/page": "app/login/page.js",
+  "/og/route": "app-edge-has-no-entrypoint",
   "/page": "app/page.js"
 }

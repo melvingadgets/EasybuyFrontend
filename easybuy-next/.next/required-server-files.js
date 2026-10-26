@@ -100,7 +100,7 @@ self.__SERVER_FILES_MANIFEST={
         "transform": "lodash/{{member}}"
       }
     },
-    "outputFileTracingRoot": "C:\\Users\\HP\\Desktop\\client",
+    "outputFileTracingRoot": "C:\\Users\\HP",
     "cacheComponents": false,
     "cacheLife": {
       "default": {
@@ -293,12 +293,12 @@ self.__SERVER_FILES_MANIFEST={
     "bundlePagesRouterDependencies": false,
     "configFileName": "next.config.ts",
     "turbopack": {
-      "root": "C:\\Users\\HP\\Desktop\\client"
+      "root": "C:\\Users\\HP"
     },
     "distDirRoot": ".next"
   },
-  "appDir": "C:\\Users\\HP\\Desktop\\client\\easybuy-next",
-  "relativeAppDir": "easybuy-next",
+  "appDir": "C:\\Users\\HP\\Desktop\\Shortwork\\EasybuyFrontend\\easybuy-next",
+  "relativeAppDir": "Desktop\\Shortwork\\EasybuyFrontend\\easybuy-next",
   "files": [
     ".next\\routes-manifest.json",
     ".next\\server\\pages-manifest.json",

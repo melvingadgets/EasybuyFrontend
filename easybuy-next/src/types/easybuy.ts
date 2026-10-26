@@ -38,8 +38,17 @@ export type EasyBuyPlanRules = {
   downPaymentRule?: DownPaymentRule;
 };
 
+/** The EasyBuy service charge (Shortwork/RESELLER-PLAN.md §8b): basis points of the financed amount or the price. */
+export type EasyBuyServiceFeeRule = {
+  bps: number;
+  base: "financed" | "price";
+  refundable: boolean;
+};
+
 export type EasyBuyCatalogResponse = {
   models: EasyBuyCatalogItem[];
   planRules: EasyBuyPlanRules;
   provider?: string;
+  /** Present once the backend publishes the service charge. */
+  serviceFee?: EasyBuyServiceFeeRule;
 };

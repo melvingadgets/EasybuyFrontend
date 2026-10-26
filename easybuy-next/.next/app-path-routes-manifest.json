@@ -1,9 +1,15 @@
 {
   "/_global-error/page": "/_global-error",
   "/_not-found/page": "/_not-found",
+  "/api/v1/public/easybuy-catalog/route": "/api/v1/public/easybuy-catalog",
+  "/api/v1/public/easybuy-drafts/step/route": "/api/v1/public/easybuy-drafts/step",
+  "/api/v1/public/easybuy-requests/route": "/api/v1/public/easybuy-requests",
+  "/api/v1/public/events/route": "/api/v1/public/events",
+  "/api/v1/public/providers/route": "/api/v1/public/providers",
   "/apple-icon.png/route": "/apple-icon.png",
   "/apply/page": "/apply",
   "/icon.png/route": "/icon.png",
   "/login/page": "/login",
+  "/og/route": "/og",
   "/page": "/"
 }

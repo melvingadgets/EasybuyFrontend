@@ -2,5 +2,51 @@
   "version": 3,
   "middleware": {},
   "sortedMiddleware": [],
-  "functions": {}
+  "functions": {
+    "/og/route": {
+      "files": [
+        "server/middleware-build-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "required-server-files.js",
+        "server/server-reference-manifest.js",
+        "server/app/og/route_client-reference-manifest.js",
+        "server/edge/chunks/f4aaf_easybuy-next__next-internal_server_app_og_route_actions_e03c4a30.js",
+        "server/edge/chunks/[root-of-the-server]__454ff114._.js",
+        "server/edge/chunks/[root-of-the-server]__e5a26605._.js",
+        "server/edge/chunks/4a3db_next_dist_compiled_@vercel_og_03d10c38._.js",
+        "server/edge/chunks/e2842_next_dist_esm_build_templates_edge-wrapper_c252d694.js"
+      ],
+      "name": "app/og/route",
+      "page": "/og/route",
+      "matchers": [
+        {
+          "regexp": "^/og(?:/)?$",
+          "originalSource": "/og"
+        }
+      ],
+      "wasm": [
+        {
+          "name": "wasm_fdb56e4cc5936d29",
+          "filePath": "server/edge/chunks/4a3db_next_dist_compiled_@vercel_og_resvg_23ace1ce.wasm"
+        },
+        {
+          "name": "wasm_1ccdc983b1fd9f87",
+          "filePath": "server/edge/chunks/4a3db_next_dist_compiled_@vercel_og_yoga_23ace1ce.wasm"
+        }
+      ],
+      "assets": [
+        {
+          "name": "server/edge/assets/noto-sans-v27-latin-regular.bdfa676c.ttf",
+          "filePath": "server/edge/assets/noto-sans-v27-latin-regular.bdfa676c.ttf"
+        }
+      ],
+      "env": {
+        "__NEXT_BUILD_ID": "C1akscsmqelr0IkjpdIsa",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "yArIP35eDVfpL1O/pLOnPMzWn1+k5KxrSR+uG2EzsLk=",
+        "__NEXT_PREVIEW_MODE_ID": "d6739ccb93517812d5ec7143f8c3c88c",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "7255b662fb05cc584a3287361355483b90efbf7af2ee9d22437727857746859b",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "83eb5856091a68b0bec975a5eecb22609b847cf52afc9c8541afb15aee118e31"
+      }
+    }
+  }
 }

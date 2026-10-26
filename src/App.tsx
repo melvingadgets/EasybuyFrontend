@@ -15,14 +15,13 @@ import { SuperAdminPage } from "./pages/SuperAdminPage";
 import { SuperAdminDateMaintenancePage } from "./pages/SuperAdminDateMaintenancePage";
 import { SuperAdminPricingPage } from "./pages/SuperAdminPricingPage";
 import { SuperAdminPublicAnalyticsPage } from "./pages/SuperAdminPublicAnalyticsPage";
-import { PublicEasyBuyRequestPage } from "./pages/PublicEasyBuyRequestPage";
-import { PublicEasyBuyVerifyPage } from "./pages/PublicEasyBuyVerifyPage";
 import { SuperAdminPublicRequestsPage } from "./pages/SuperAdminPublicRequestsPage";
 import { SuperAdminAbandonedDraftsPage } from "./pages/SuperAdminAbandonedDraftsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ForbiddenPage } from "./pages/ForbiddenPage";
 import { GlobalLoadingOverlay } from "./components/GlobalLoadingOverlay";
 import { MelvinBridge } from "./components/MelvinBridge";
+import { RedirectToApply } from "./components/RedirectToApply";
 
 const App = () => {
   return (
@@ -30,8 +29,9 @@ const App = () => {
       <GlobalLoadingOverlay minDurationMs={150} />
       <MelvinBridge />
       <Routes>
-        <Route path="/apply" element={<PublicEasyBuyRequestPage />} />
-        <Route path="/apply/verify" element={<PublicEasyBuyVerifyPage />} />
+        {/* The public form lives in the Apply app now; old links keep working (RedirectToApply). */}
+        <Route path="/apply" element={<RedirectToApply />} />
+        <Route path="/apply/verify" element={<RedirectToApply />} />
 
         <Route element={<Layout />}>
           <Route path="/" element={<Navigate to="/login" replace />} />

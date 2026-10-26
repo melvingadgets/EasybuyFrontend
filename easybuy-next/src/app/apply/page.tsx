@@ -19,6 +19,7 @@ async function getProviders(): Promise<FinanceProviderInfo[]> {
 async function getCatalog(provider: string): Promise<{
   models: EasyBuyCatalogResponse["models"];
   planRules: EasyBuyCatalogResponse["planRules"] | null;
+  serviceFee: EasyBuyCatalogResponse["serviceFee"] | null;
 }> {
   try {
     const res = await fetch(
@@ -29,16 +30,17 @@ async function getCatalog(provider: string): Promise<{
     return {
       models: data?.data?.models || [],
       planRules: data?.data?.planRules || null,
+      serviceFee: data?.data?.serviceFee || null,
     };
   } catch {
-    return { models: [], planRules: null };
+    return { models: [], planRules: null, serviceFee: null };
   }
 }
 
 export default async function ApplyPage() {
   const providers = await getProviders();
   const initialProvider = providers[0]?.slug || "aurapay";
-  const { models, planRules } = await getCatalog(initialProvider);
+  const { models, planRules, serviceFee } = await getCatalog(initialProvider);
 
   return (
     <ApplyForm
@@ -46,6 +48,7 @@ export default async function ApplyPage() {
       initialProvider={initialProvider}
       initialCatalog={models}
       initialPlanRules={planRules}
+      initialServiceFee={serviceFee}
     />
   );
 }

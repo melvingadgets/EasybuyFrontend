@@ -41,6 +41,36 @@
       "namedRegex": "^/_not\\-found(?:/)?$"
     },
     {
+      "page": "/api/v1/public/easybuy-catalog",
+      "regex": "^/api/v1/public/easybuy\\-catalog(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/v1/public/easybuy\\-catalog(?:/)?$"
+    },
+    {
+      "page": "/api/v1/public/easybuy-drafts/step",
+      "regex": "^/api/v1/public/easybuy\\-drafts/step(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/v1/public/easybuy\\-drafts/step(?:/)?$"
+    },
+    {
+      "page": "/api/v1/public/easybuy-requests",
+      "regex": "^/api/v1/public/easybuy\\-requests(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/v1/public/easybuy\\-requests(?:/)?$"
+    },
+    {
+      "page": "/api/v1/public/events",
+      "regex": "^/api/v1/public/events(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/v1/public/events(?:/)?$"
+    },
+    {
+      "page": "/api/v1/public/providers",
+      "regex": "^/api/v1/public/providers(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/v1/public/providers(?:/)?$"
+    },
+    {
       "page": "/apple-icon.png",
       "regex": "^/apple\\-icon\\.png(?:/)?$",
       "routeKeys": {},
@@ -63,6 +93,12 @@
       "regex": "^/login(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/og",
+      "regex": "^/og(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/og(?:/)?$"
     }
   ],
   "dataRoutes": [],

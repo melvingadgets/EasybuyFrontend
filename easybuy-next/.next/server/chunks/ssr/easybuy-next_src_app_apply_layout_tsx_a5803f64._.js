@@ -1,3 +1,0 @@
-module.exports=[55700,a=>{"use strict";let b="/og-image.png",c="IPHONE EASYBUY APPLICATION FORM",d="Apply for iPhone EasyBuy in Nigeria. Choose your model and capacity, pick a payment plan, and get quick WhatsApp support.";function e({children:a}){return a}a.s(["default",()=>e,"metadata",0,{title:c,description:d,alternates:{canonical:"/apply"},openGraph:{title:c,description:d,url:"/apply",siteName:"Melvin Gadgets",locale:"en_NG",type:"website",images:[{url:b,alt:"Melvin Gadgets iPhone EasyBuy application form"}]},twitter:{card:"summary_large_image",title:c,description:d,images:[b]}}])}];
-
-//# sourceMappingURL=easybuy-next_src_app_apply_layout_tsx_a5803f64._.js.map
