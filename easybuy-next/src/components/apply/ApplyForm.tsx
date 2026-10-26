@@ -178,12 +178,9 @@ export function ApplyForm({ initialProviders, initialProvider, initialCatalog, i
         if (parsed?.step) {
           setStep(normalizeStep(parsed.step));
         }
-        if (typeof parsed?.selectedProvider === "string") {
-          setSelectedProvider(String(parsed.selectedProvider).trim());
-        }
-        if (Array.isArray(parsed?.providers) && parsed.providers.length) {
-          setProviders(parsed.providers);
-        }
+        // The provider picker is gone, so a provider saved in an older draft is NOT restored:
+        // it would pin the applicant to a provider they can no longer change. Everyone gets
+        // the server's default provider (initialProvider).
       }
     } catch {
       localStorage.removeItem(DRAFT_KEY);
