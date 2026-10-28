@@ -5,6 +5,7 @@ import { BlurLoadingContainer } from "../components/BlurLoadingContainer";
 import { MobileField } from "../components/superadmin/MobileField";
 import { PublicRequestStatusBadge } from "../components/superadmin/PublicRequestStatusBadge";
 import { PublicSubmissionDetailsModal } from "../components/superadmin/PublicSubmissionDetailsModal";
+import { ApplicationDocumentsModal } from "../components/superadmin/ApplicationDocumentsModal";
 import { getRtkErrorMessage } from "../lib/rtkError";
 import { formatCurrency, formatDateTime } from "../lib/superadminFormat";
 import {
@@ -33,7 +34,22 @@ const formatInputWithCommas = (value: string) => {
   return decimals.length ? `${formattedInteger}.${decimals}` : formattedInteger;
 };
 
+// Requests made since documents shipped need the bank statement, NIN and NIN photo to be approved.
+const needsDocuments = (request: PublicEasyBuyRequest) => Boolean(request.documents?.required && !request.documents?.complete);
+
+const DocumentsBadge = ({ request }: { request: PublicEasyBuyRequest }) => {
+  if (!request.documents?.required) return null;
+  return request.documents.complete ? (
+    <span className="inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">Documents ✓</span>
+  ) : (
+    <span className="inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+      Documents {request.documents.count ?? 0}/3
+    </span>
+  );
+};
+
 export const SuperAdminPublicRequestsPage = () => {
+  const [documentsModalRequest, setDocumentsModalRequest] = useState<PublicEasyBuyRequest | null>(null);
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
   const [reasonByRequestId, setReasonByRequestId] = useState<Record<string, string>>({});
@@ -193,7 +209,10 @@ export const SuperAdminPublicRequestsPage = () => {
                       <p className="text-sm font-semibold">{request.fullName || "-"}</p>
                       <p className="text-xs text-muted-foreground">{request.email || "-"}</p>
                     </div>
-                    <PublicRequestStatusBadge status={request.status} />
+                    <div className="flex flex-col items-end gap-1">
+                      <PublicRequestStatusBadge status={request.status} />
+                      <DocumentsBadge request={request} />
+                    </div>
                   </div>
 
                   <div className="mt-3 grid gap-3">
@@ -245,7 +264,8 @@ export const SuperAdminPublicRequestsPage = () => {
                     <button
                       type="button"
                       onClick={() => onApprove(request.requestId)}
-                      disabled={!canReview || loadingAction}
+                      disabled={!canReview || loadingAction || needsDocuments(request)}
+                      title={needsDocuments(request) ? "Waiting for the applicant's documents" : undefined}
                       className="rounded-md bg-primary px-3 py-2 text-xs text-primary-foreground hover:opacity-90 disabled:opacity-60"
                     >
                       Approve
@@ -273,7 +293,19 @@ export const SuperAdminPublicRequestsPage = () => {
                     >
                       View More
                     </button>
+                    {request.documents?.required ? (
+                      <button
+                        type="button"
+                        onClick={() => setDocumentsModalRequest(request)}
+                        className="rounded-md border border-border bg-background px-3 py-2 text-xs hover:bg-muted"
+                      >
+                        Documents
+                      </button>
+                    ) : null}
                   </div>
+                  {canReview && needsDocuments(request) ? (
+                    <p className="mt-2 text-xs text-amber-700">Approve unlocks once the applicant uploads all three documents.</p>
+                  ) : null}
 
                   {loadingAction && (
                     <div className="mt-3 flex justify-end">
@@ -324,6 +356,9 @@ export const SuperAdminPublicRequestsPage = () => {
                       </td>
                       <td className="px-3 py-2 text-sm">
                         <PublicRequestStatusBadge status={request.status} />
+                        <div className="mt-1">
+                          <DocumentsBadge request={request} />
+                        </div>
                         {request.rejectionReason && (
                           <p className="mt-1 text-xs text-destructive">Reason: {request.rejectionReason}</p>
                         )}
@@ -347,7 +382,8 @@ export const SuperAdminPublicRequestsPage = () => {
                           <button
                             type="button"
                             onClick={() => onApprove(request.requestId)}
-                            disabled={!canReview || loadingAction}
+                            disabled={!canReview || loadingAction || needsDocuments(request)}
+                            title={needsDocuments(request) ? "Waiting for the applicant's documents" : undefined}
                             className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:opacity-90 disabled:opacity-60"
                           >
                             Approve
@@ -375,6 +411,15 @@ export const SuperAdminPublicRequestsPage = () => {
                           >
                             View More
                           </button>
+                          {request.documents?.required ? (
+                            <button
+                              type="button"
+                              onClick={() => setDocumentsModalRequest(request)}
+                              className="rounded-md border border-border bg-background px-3 py-1.5 text-xs hover:bg-muted"
+                            >
+                              Documents
+                            </button>
+                          ) : null}
                           {loadingAction && (
                             <ClipLoader color="hsl(var(--primary))" size={14} speedMultiplier={0.9} />
                           )}
@@ -524,6 +569,13 @@ export const SuperAdminPublicRequestsPage = () => {
         title="Public Request Details"
         onClose={() => setViewDetailsModalRequest(null)}
       />
+      {documentsModalRequest ? (
+        <ApplicationDocumentsModal
+          requestId={documentsModalRequest.requestId}
+          applicantName={documentsModalRequest.fullName}
+          onClose={() => setDocumentsModalRequest(null)}
+        />
+      ) : null}
     </BlurLoadingContainer>
   );
 };

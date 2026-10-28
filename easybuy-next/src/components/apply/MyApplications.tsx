@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ApplicationDocuments } from "@/components/apply/ApplicationDocuments";
 import { getMelvinBridgeToken, onMelvinAuthChange } from "@/lib/melvinBridge";
+
+// Applications that can still take documents (approval or rejection locks them).
+const OPEN_STATUSES = new Set(["pending_verification", "verified"]);
 
 // "My applications": inside Melvin OS, a signed-in person sees where each of their EasyBuy
 // applications stands (the Apply integration's third step). Hidden for anonymous visitors.
@@ -26,6 +30,7 @@ const STATUS: Record<MyRequest["status"], { label: string; tone: string }> = {
 export function MyApplications() {
   const [token, setToken] = useState<string | null>(() => getMelvinBridgeToken());
   const [requests, setRequests] = useState<MyRequest[]>([]);
+  const [openDocuments, setOpenDocuments] = useState<string | null>(null);
 
   useEffect(() => onMelvinAuthChange(() => setToken(getMelvinBridgeToken())), []);
 
@@ -54,14 +59,31 @@ export function MyApplications() {
         {requests.map((request) => {
           const status = STATUS[request.status] ?? { label: request.status, tone: "bg-muted text-foreground" };
           return (
-            <li key={request.requestId} className="flex items-center justify-between gap-3 rounded-lg bg-background px-3 py-2.5">
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-medium">
-                  {request.iphoneModel} ({request.capacity}) · {request.plan}
+            <li key={request.requestId} className="rounded-lg bg-background px-3 py-2.5">
+              <div className="flex items-center justify-between gap-3">
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-medium">
+                    {request.iphoneModel} ({request.capacity}) · {request.plan}
+                  </span>
+                  <span className="block text-xs text-muted-foreground">{request.requestId}</span>
                 </span>
-                <span className="block text-xs text-muted-foreground">{request.requestId}</span>
-              </span>
-              <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${status.tone}`}>{status.label}</span>
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${status.tone}`}>{status.label}</span>
+              </div>
+              {OPEN_STATUSES.has(request.status) ? (
+                <button
+                  type="button"
+                  aria-expanded={openDocuments === request.requestId}
+                  onClick={() => setOpenDocuments((current) => (current === request.requestId ? null : request.requestId))}
+                  className="mt-2 min-h-11 w-full rounded-md border border-border px-3 text-sm font-medium hover:bg-muted"
+                >
+                  {openDocuments === request.requestId ? "Hide documents" : "Documents: bank statement, NIN, photo"}
+                </button>
+              ) : null}
+              {openDocuments === request.requestId && token ? (
+                <div className="mt-3">
+                  <ApplicationDocuments requestId={request.requestId} auth={{ bearer: token }} compact />
+                </div>
+              ) : null}
             </li>
           );
         })}

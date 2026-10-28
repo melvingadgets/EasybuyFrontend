@@ -5,6 +5,13 @@ import toast from "react-hot-toast";
 import ClipLoader from "react-spinners/ClipLoader";
 import { FormLayout } from "@/components/apply/FormLayout";
 import { MyApplications } from "@/components/apply/MyApplications";
+import { ApplicationDocuments } from "@/components/apply/ApplicationDocuments";
+import {
+  clearDocumentsSession,
+  loadDocumentsSession,
+  saveDocumentsSession,
+  type DocumentsSession,
+} from "@/components/apply/documentsSession";
 import { StepFourReview } from "@/components/apply/steps/StepFourReview";
 import { StepOneBasicInfo } from "@/components/apply/steps/StepOneBasicInfo";
 import { StepTwoPlan } from "@/components/apply/steps/StepTwoPlan";
@@ -94,6 +101,18 @@ export function ApplyForm({ initialProviders, initialProvider, initialCatalog, i
   const catalogForProviderRef = useRef(initialProvider);
 
   const [submittedRequestId, setSubmittedRequestId] = useState("");
+  // After submitting: the application whose documents are being added (kept on this device).
+  const [documentsSession, setDocumentsSession] = useState<DocumentsSession | null>(null);
+
+  useEffect(() => {
+    setDocumentsSession(loadDocumentsSession());
+  }, []);
+
+  const startNewApplication = () => {
+    clearDocumentsSession();
+    setDocumentsSession(null);
+    setSubmittedRequestId("");
+  };
 
   const [contactAdminModalOpen, setContactAdminModalOpen] = useState(false);
   const [contactAdminWhatsAppUrl, setContactAdminWhatsAppUrl] = useState("");
@@ -636,18 +655,32 @@ export function ApplyForm({ initialProviders, initialProvider, initialCatalog, i
       } as any);
 
       const requestId = String(response?.data?.data?.requestId || "");
+      const documentsToken = String(response?.data?.data?.documentsToken || "");
+      const whatsAppUrl = buildPublicWhatsAppUrl({
+        fullName: payload.fullName,
+        email: payload.email,
+        phone: payload.phone,
+        iphoneModel: payload.iphoneModel,
+        capacity: payload.capacity,
+        plan: payload.plan as "Monthly" | "Weekly",
+      });
       setSubmittedRequestId(requestId);
-      setContactAdminWhatsAppUrl(
-        buildPublicWhatsAppUrl({
-          fullName: payload.fullName,
-          email: payload.email,
-          phone: payload.phone,
-          iphoneModel: payload.iphoneModel,
-          capacity: payload.capacity,
-          plan: payload.plan as "Monthly" | "Weekly",
-        })
-      );
-      setContactAdminModalOpen(true);
+      setContactAdminWhatsAppUrl(whatsAppUrl);
+      if (requestId && documentsToken) {
+        // Next: the bank statement, NIN and NIN photo, which EasyBuy needs before approving.
+        const session: DocumentsSession = {
+          requestId,
+          documentsToken,
+          downPaymentNaira: parseFormattedNumber(form.downPayment) || undefined,
+          whatsAppUrl,
+          savedAt: Date.now(),
+        };
+        saveDocumentsSession(session);
+        setDocumentsSession(session);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        setContactAdminModalOpen(true);
+      }
 
       toast.success("Request submitted successfully.");
       trackTikTokEvent("SubmitForm", {
@@ -778,6 +811,22 @@ export function ApplyForm({ initialProviders, initialProvider, initialCatalog, i
     weeklyDurations,
   ]);
 
+  if (documentsSession) {
+    return (
+      <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-10 md:px-6">
+        <section className="rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-soft sm:p-6">
+          <ApplicationDocuments
+            requestId={documentsSession.requestId}
+            auth={{ documentsToken: documentsSession.documentsToken, bearer: getMelvinBridgeToken() }}
+            downPaymentNaira={documentsSession.downPaymentNaira}
+            whatsAppUrl={documentsSession.whatsAppUrl}
+            onStartNew={startNewApplication}
+          />
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-10 md:px-6">
       <FormLayout step={step}>
@@ -856,7 +905,8 @@ export function ApplyForm({ initialProviders, initialProvider, initialCatalog, i
             <h2 className="font-heading text-xl font-semibold">Contact Melvin Gadgets</h2>
             <div className="mt-3 space-y-2 text-sm">
               <p className="font-semibold text-foreground">
-                Please get your 3 months bank statement and NIN ready.
+                You&apos;ll need your last 3 months&apos; bank statement (with your down payment already in the account), your NIN,
+                and a photo of you holding your NIN.
               </p>
               <p className="font-bold text-foreground">
                 Melvin Gadgets will contact you soon.

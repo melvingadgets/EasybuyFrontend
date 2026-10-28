@@ -226,9 +226,42 @@ export type PublicEasyBuyRequestStatus =
   | "rejected"
   | "converted";
 
+/** Documents status in the review list (counts only; never the NIN or a file link). */
+export type PublicEasyBuyRequestDocumentsSummary = {
+  required: boolean;
+  count?: number;
+  complete?: boolean;
+  missing?: Array<"bank_statement" | "nin" | "nin_selfie">;
+};
+
+export type PublicEasyBuyDocumentFile = {
+  fileId: string;
+  format: string;
+  mime: string;
+  bytes: number;
+  uploadedAt: string;
+  /** A signed link that expires after a few minutes. */
+  url: string;
+};
+
+export type PublicEasyBuyRequestDocuments = {
+  requestId: string;
+  required: boolean;
+  editable: boolean;
+  complete: boolean;
+  missing: Array<"bank_statement" | "nin" | "nin_selfie">;
+  downPaymentConfirmed: boolean;
+  nin: { provided: boolean; value?: string };
+  ninUnreadable?: boolean;
+  bankStatements: PublicEasyBuyDocumentFile[];
+  ninSelfie: PublicEasyBuyDocumentFile | null;
+  linkExpiresInSeconds: number;
+};
+
 export type PublicEasyBuyRequest = {
   _id: string;
   requestId: string;
+  documents?: PublicEasyBuyRequestDocumentsSummary;
   fullName: string;
   email: string;
   phone: string;

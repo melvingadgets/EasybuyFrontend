@@ -15,6 +15,7 @@ import type {
   PublicEasyBuyAnalytics,
   PublicEasyBuyAbandonedDraft,
   PublicEasyBuyRequest,
+  PublicEasyBuyRequestDocuments,
   ReceiptUploadedDatePreview,
   ReceiptUploadedDateUpdate,
   ReceiptItem,
@@ -412,6 +413,16 @@ export const backendApi = createApi({
       providesTags: [{ type: "PublicEasyBuyAbandonedDrafts", id: "LIST" }],
     }),
 
+    // NIN, bank statements and NIN photo for one request. The file links expire after a few
+    // minutes, so nothing is cached: each open fetches fresh links (and is audited server-side).
+    getSuperAdminPublicEasyBuyRequestDocuments: builder.query<ApiSuccess<PublicEasyBuyRequestDocuments>, string>({
+      query: (requestId) => ({
+        url: `/api/v1/superadmin/public-easybuy-requests/${encodeURIComponent(requestId)}/documents`,
+        suppressErrorToast: true,
+      }),
+      keepUnusedDataFor: 0,
+    }),
+
     getSuperAdminPublicEasyBuyAnalytics: builder.query<
       ApiSuccess<PublicEasyBuyAnalytics>,
       { landingPath?: string; provider?: string } | void
@@ -504,6 +515,7 @@ export const {
   useGetSuperAdminPublicEasyBuyRequestsQuery,
   useGetSuperAdminAbandonedPublicEasyBuyDraftsQuery,
   useGetSuperAdminPublicEasyBuyAnalyticsQuery,
+  useGetSuperAdminPublicEasyBuyRequestDocumentsQuery,
   useApproveSuperAdminPublicEasyBuyRequestMutation,
   useRejectSuperAdminPublicEasyBuyRequestMutation,
   useConvertSuperAdminPublicEasyBuyRequestMutation,
