@@ -1,21 +1,39 @@
 import { FormEvent, useEffect, useState } from "react";
 import axios from "axios";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { auth } from "../lib/auth";
+import { authUrl } from "../lib/authBase";
 import ClipLoader from "react-spinners/ClipLoader";
 import { FaSignInAlt } from "react-icons/fa";
 import { isEmbeddedInMelvin } from "../lib/melvinBridge";
-import { api } from "../lib/api";
 
-// Same backend as every other call (it used to be a second hardcoded copy of the URL).
-const loginUrl = () => `${String(api.defaults.baseURL).replace(/\/+$/, "")}/api/v1/user/login-user`;
+// Sign-in goes to the unified auth service (Shortwork/AGENTS.md §1.4: identity belongs to auth).
+// It answers with an RS256 access token the EasyBuy backend verifies against auth's JWKS, plus a
+// refresh token that renews it. The same response still carries a legacy `data` token; it is
+// deliberately ignored — EasyBuy's Apply routes only accept the platform token.
+
+type LoginResponse = {
+  message?: string;
+  accessToken?: string;
+  refreshToken?: string;
+  user?: { fullName?: string };
+};
+
+/** Only same-site paths: an open redirect would turn the login page into a phishing hop. */
+export const safeReturnTo = (value: string | null): string => {
+  const path = String(value ?? "").trim();
+  if (!path.startsWith("/") || path.startsWith("//") || path.startsWith("/\\")) return "/dashboard";
+  return path;
+};
 
 export const LoginPage = () => {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const returnTo = safeReturnTo(params.get("returnTo"));
 
   useEffect(() => {
     // Inside Melvin OS the frame can be shorter than the login card, so the page must stay
@@ -37,16 +55,17 @@ export const LoginPage = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { data } = await axios.post(loginUrl(), {
-        email,
+      const { data } = await axios.post<LoginResponse>(authUrl("/api/v1/auth/login"), {
+        identifier: identifier.trim(),
         password,
+        device: { userAgent: navigator.userAgent },
       });
-      const token = data?.data;
-      if (typeof token === "string") {
-        auth.setToken(token);
+      if (!data?.accessToken) {
+        throw new Error("The sign-in service didn't return a session. Try again.");
       }
+      auth.setSession({ accessToken: data.accessToken, refreshToken: data.refreshToken });
       toast.success(data?.message || "Login successful");
-      navigate("/dashboard");
+      navigate(returnTo, { replace: true });
     } catch (error: any) {
       const message =
         error?.response?.data?.message ||
@@ -54,7 +73,8 @@ export const LoginPage = () => {
         error?.response?.data?.error ||
         error?.message ||
         "Login failed";
-      toast.error(String(message));
+      // "invalid credentials" is deliberately vague upstream; say what to do about it.
+      toast.error(message === "invalid credentials" ? "Email or password is incorrect" : String(message));
     } finally {
       setLoading(false);
     }
@@ -72,13 +92,14 @@ export const LoginPage = () => {
         </div>
         <form onSubmit={submit} className="space-y-4 rounded-lg border border-border bg-card p-6 text-card-foreground shadow-soft">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Email</label>
+            <label className="text-sm font-medium">Email or phone</label>
             <input
               className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              type="email"
+              type="text"
               placeholder="john@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="username"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               required
             />
           </div>
@@ -88,6 +109,7 @@ export const LoginPage = () => {
               className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               type="password"
               placeholder="********"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required

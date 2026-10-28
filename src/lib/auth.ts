@@ -3,6 +3,9 @@ import { getMelvinBridgeToken, isEmbeddedInMelvin } from "./melvinBridge";
 const TOKEN_KEY = "easybuytracker_token";
 const SESSION_TOKEN_KEY = "easybuytracker_session_token";
 const LEGACY_SESSION_TOKEN_KEY = "easybuytracker_sessiontoken";
+// The refresh token from the unified auth service. Long-lived and single-use (auth rotates it on
+// every refresh), so the newest one always replaces the old.
+const REFRESH_TOKEN_KEY = "easybuytracker_refresh_token";
 type UserRole = "Admin" | "User" | "SuperAdmin" | null;
 
 // Inside Melvin OS the session comes from the bridge and lives in memory only.
@@ -45,13 +48,30 @@ const isTokenExpired = (payload: JwtPayload | null): boolean => {
   return payload.exp <= nowInSeconds;
 };
 
+/** The whole sign-in: the short-lived access token plus the refresh token that renews it. */
+export type AuthSession = {
+  accessToken: string;
+  refreshToken?: string;
+};
+
 export const auth = {
   getToken: () => currentToken(),
   setToken: (token: string) => localStorage.setItem(TOKEN_KEY, token),
+  /** Saves a sign-in from the unified auth service: access token now, refresh token for later. */
+  setSession: (session: AuthSession) => {
+    localStorage.setItem(TOKEN_KEY, session.accessToken);
+    if (session.refreshToken) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, session.refreshToken);
+    }
+  },
+  getRefreshToken: (): string | null => localStorage.getItem(REFRESH_TOKEN_KEY),
+  /** Replaces the access token after a refresh, keeping the rotated refresh token. */
+  replaceTokens: (session: AuthSession) => auth.setSession(session),
   clearToken: () => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(SESSION_TOKEN_KEY);
     localStorage.removeItem(LEGACY_SESSION_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
     sessionStorage.removeItem(TOKEN_KEY);
     sessionStorage.removeItem(SESSION_TOKEN_KEY);
     sessionStorage.removeItem(LEGACY_SESSION_TOKEN_KEY);

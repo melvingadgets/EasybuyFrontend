@@ -1,4 +1,4 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { auth } from "../lib/auth";
 
 type ProtectedRouteProps = {
@@ -6,8 +6,13 @@ type ProtectedRouteProps = {
 };
 
 export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
+  const location = useLocation();
+
   if (!auth.isLoggedIn()) {
-    return <Navigate to="/login" replace />;
+    // Send them back where they were headed once they sign in: an applicant who submitted the
+    // form lands straight on the documents step instead of the dashboard.
+    const returnTo = `${location.pathname}${location.search}`;
+    return <Navigate to={`/login?returnTo=${encodeURIComponent(returnTo)}`} replace />;
   }
 
   const role = auth.getRole();

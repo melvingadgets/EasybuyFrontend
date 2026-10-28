@@ -21,7 +21,10 @@ import { NotFoundPage } from "./pages/NotFoundPage";
 import { ForbiddenPage } from "./pages/ForbiddenPage";
 import { GlobalLoadingOverlay } from "./components/GlobalLoadingOverlay";
 import { MelvinBridge } from "./components/MelvinBridge";
-import { RedirectToApply } from "./components/RedirectToApply";
+import { ApprovedOnlyRoute } from "./components/ApprovedOnlyRoute";
+import { ApplyPage } from "./pages/apply/ApplyPage";
+import { ApplyDocumentsPage } from "./pages/apply/ApplyDocumentsPage";
+import { ApplyStatusPage } from "./pages/apply/ApplyStatusPage";
 
 const App = () => {
   return (
@@ -29,10 +32,6 @@ const App = () => {
       <GlobalLoadingOverlay minDurationMs={150} />
       <MelvinBridge />
       <Routes>
-        {/* The public form lives in the Apply app now; old links keep working (RedirectToApply). */}
-        <Route path="/apply" element={<RedirectToApply />} />
-        <Route path="/apply/verify" element={<RedirectToApply />} />
-
         <Route element={<Layout />}>
           <Route path="/" element={<Navigate to="/login" replace />} />
 
@@ -40,17 +39,28 @@ const App = () => {
             <Route path="/login" element={<LoginPage />} />
           </Route>
 
+          {/* Apply: anonymous all the way to submitting. The login wall is on the documents step. */}
+          <Route path="/apply" element={<ApplyPage />} />
+          <Route path="/apply/form" element={<ApplyPage />} />
+          {/* The old verify page's address: an applicant following a link from an email lands on
+              their status, which is where verification progress actually shows now. */}
+          <Route path="/apply/verify" element={<Navigate to="/apply/status" replace />} />
+
           <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/apply/documents" element={<ApplyDocumentsPage />} />
+            <Route path="/apply/status" element={<ApplyStatusPage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
 
-          <Route element={<ProtectedRoute allowedRoles={["User"]} />}>
-            <Route path="/items" element={<ItemsPage />} />
-          </Route>
-
-          <Route element={<ProtectedRoute allowedRoles={["User"]} />}>
-            <Route path="/receipts" element={<ReceiptUploadPage />} />
+          {/* The finance screens open once a request is approved; ApprovedOnlyRoute decides. */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<ApprovedOnlyRoute />}>
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route element={<ProtectedRoute allowedRoles={["User"]} />}>
+                <Route path="/items" element={<ItemsPage />} />
+                <Route path="/receipts" element={<ReceiptUploadPage />} />
+              </Route>
+            </Route>
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={["SuperAdmin"]} />}>

@@ -36,6 +36,8 @@ type NavItem = {
 const navItems = [
   { to: "/login", label: "Login", icon: FaSignInAlt, guestOnly: true },
   { to: "/register", label: "Register Admin", icon: FaUserShield, authOnly: true, roles: ["SuperAdmin"] },
+  { to: "/apply", label: "Apply", icon: FaBoxOpen },
+  { to: "/apply/status", label: "My Applications", icon: FaCheckCircle, authOnly: true },
   { to: "/dashboard", label: "Dashboard", icon: FaTachometerAlt, authOnly: true },
   { to: "/profile", label: "Profile", icon: FaUserCircle, authOnly: true },
   { to: "/receipts", label: "My Receipts", icon: FaReceipt, authOnly: true, roles: ["User"] },

@@ -130,6 +130,28 @@
   transform-origin: center;
 }
 
+/* A form step arriving (ported with the Apply form). Skipped for people who ask for less motion. */
+@keyframes step-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.step-enter {
+  animation: step-enter 220ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step-enter {
+    animation: none;
+  }
+}
+
 /* Inside Melvin OS the phone frame hides scrollbars, so the embedded page does too. */
 html.melvin-embed,
 html.melvin-embed body {

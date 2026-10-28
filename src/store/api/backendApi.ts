@@ -1,11 +1,15 @@
 import { beginGlobalLoad } from "../../lib/globalLoading";
 import { auth } from "../../lib/auth";
+import { backendBaseUrl } from "../../lib/backendBase";
 import { isMelvinBridgeToken, reportBridgeResponse } from "../../lib/melvinBridge";
+import { refreshAccessToken } from "../../lib/tokenRefresh";
 import type {
   ApiSuccess,
   CurrentUser,
   EasyBuyCatalogResponse,
   EasyBuyPricingResponse,
+  FinanceProviderInfo,
+  MyEasyBuyApplication,
   DashboardResponse,
   EasyBoughtItemCreatedDatePreview,
   EasyBoughtItemCreatedDateUpdate,
@@ -39,36 +43,8 @@ type ExtendedFetchArgs = FetchArgs & {
   suppressErrorToast?: boolean;
 };
 
-const apiMode = String(import.meta.env.VITE_API_MODE || "online").trim().toLowerCase();
-const envBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
-const localUrl = String(import.meta.env.VITE_API_LOCAL_URL || "http://localhost:552").trim();
-const onlineUrl = String(import.meta.env.VITE_API_ONLINE_URL || "https://easybuy-api-production.up.railway.app").trim();
-const onlineFallbackUrl = "https://easybuy-api-production.up.railway.app";
-
-const isLocalhostUrl = (value: string) => {
-  const normalized = String(value || "").trim().toLowerCase();
-  return normalized.includes("localhost") || normalized.includes("127.0.0.1");
-};
-
-const shouldAvoidLocalhostBase =
-  typeof window !== "undefined" &&
-  window.location.hostname !== "localhost" &&
-  window.location.hostname !== "127.0.0.1";
-const isRuntimeLocalhost =
-  typeof window !== "undefined" &&
-  (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
-
-const selectedBaseUrl =
-  envBaseUrl ||
-  (apiMode === "local"
-    ? localUrl || onlineUrl || onlineFallbackUrl
-    : onlineUrl || localUrl || onlineFallbackUrl);
-
-const baseUrl = isRuntimeLocalhost
-  ? selectedBaseUrl
-  : shouldAvoidLocalhostBase && isLocalhostUrl(selectedBaseUrl)
-    ? onlineUrl || onlineFallbackUrl
-    : onlineUrl || onlineFallbackUrl;
+// Same origin rules as the axios client; one implementation, in backendBase.ts.
+const baseUrl = backendBaseUrl;
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl,
@@ -121,12 +97,21 @@ const baseQueryWithUx: BaseQueryFn<string | ExtendedFetchArgs, unknown, FetchBas
   const { suppressGlobalLoader = false, suppressErrorToast = false, ...queryArgs } = request;
 
   const stopLoading = suppressGlobalLoader ? undefined : beginGlobalLoad();
-  // Which token this request will carry, so its answer can teach the Melvin OS gate (bridgeGate.ts).
+  // Which token this request will carry, so its answer can teach the Melvin OS gate (bridgeGate.ts)
+  // and, for our own tokens, so a 401 can renew exactly the one that was refused.
   const sentToken = auth.getToken();
   const bridgeToken = isMelvinBridgeToken(sentToken) ? sentToken : null;
+  const userToken = sentToken && !bridgeToken ? sentToken : null;
 
   try {
-    const result = await rawBaseQuery(queryArgs as FetchArgs, api, extraOptions);
+    let result = await rawBaseQuery(queryArgs as FetchArgs, api, extraOptions);
+
+    // Access-token expiry: renew once, then replay the request with the fresh token.
+    if (result.error?.status === 401 && userToken && !bridgeToken && !api.signal.aborted) {
+      if (await refreshAccessToken(userToken)) {
+        result = await rawBaseQuery(queryArgs as FetchArgs, api, extraOptions);
+      }
+    }
 
     let handledByGate = false;
     if (bridgeToken && !api.signal.aborted) {
@@ -169,6 +154,9 @@ export const backendApi = createApi({
     "PublicEasyBuyRequests",
     "PublicEasyBuyAbandonedDrafts",
     "PublicEasyBuyAnalytics",
+    "PublicProviders",
+    "PublicCatalog",
+    "MyApplications",
   ],
   endpoints: (builder) => ({
     getCurrentUser: builder.query<ApiSuccess<CurrentUser>, void>({
@@ -189,6 +177,73 @@ export const backendApi = createApi({
     getEasyBuyCatalog: builder.query<ApiSuccess<EasyBuyCatalogResponse>, void>({
       query: () => ({ url: "/api/v1/user/easybuy-catalog", suppressErrorToast: true }),
       providesTags: [{ type: "EasyBuyCatalog", id: "CATALOG" }],
+    }),
+
+    // ── Apply (public) ────────────────────────────────────────────────────────
+    // The applicant-facing screens. These are the routes the standalone Apply app uses, read
+    // through the same client so they get the token, the refresh-on-401 and the error handling.
+
+    getPublicProviders: builder.query<ApiSuccess<FinanceProviderInfo[]>, void>({
+      query: () => ({ url: "/api/v1/public/providers", suppressErrorToast: true }),
+      providesTags: [{ type: "PublicProviders", id: "LIST" }],
+    }),
+
+    /** The public catalog: models, plan rules and the service-fee rule, for one provider. */
+    getPublicEasyBuyCatalog: builder.query<ApiSuccess<EasyBuyCatalogResponse>, string | void>({
+      query: (provider) => ({
+        url: provider
+          ? `/api/v1/public/easybuy-catalog?provider=${encodeURIComponent(provider)}`
+          : "/api/v1/public/easybuy-catalog",
+        suppressErrorToast: true,
+      }),
+      providesTags: [{ type: "PublicCatalog", id: "CATALOG" }],
+    }),
+
+    /** The signed-in person's own applications. 401 for anonymous visitors. */
+    getMyApplications: builder.query<ApiSuccess<MyEasyBuyApplication[]>, void>({
+      query: () => ({ url: "/api/v1/public/easybuy-requests/mine", suppressErrorToast: true }),
+      providesTags: [{ type: "MyApplications", id: "LIST" }],
+    }),
+
+    /** Submits an application, anonymously or signed in, and returns its documents key. */
+    createPublicEasyBuyRequest: builder.mutation<
+      ApiSuccess<{ requestId: string; documentsToken: string; status?: string }>,
+      Record<string, unknown>
+    >({
+      query: (body) => ({
+        url: "/api/v1/public/easybuy-requests",
+        method: "POST",
+        body,
+        suppressGlobalLoader: true,
+        suppressErrorToast: true,
+      }),
+      invalidatesTags: [{ type: "MyApplications", id: "LIST" }],
+    }),
+
+    /** Half-finished applications, so the public analytics and the funnel still see progress. */
+    savePublicEasyBuyDraftStep: builder.mutation<ApiSuccess, Record<string, unknown>>({
+      query: (body) => ({
+        url: "/api/v1/public/easybuy-drafts/step",
+        method: "POST",
+        body,
+        suppressGlobalLoader: true,
+        suppressErrorToast: true,
+      }),
+    }),
+
+    /**
+     * Attaches an application submitted anonymously to the signed-in person, so it shows up in
+     * `/mine` and the approval gate can see it. Idempotent; 409 if someone else already owns it.
+     */
+    claimPublicEasyBuyRequest: builder.mutation<ApiSuccess, { requestId: string; documentsToken?: string }>({
+      query: ({ requestId, documentsToken }) => ({
+        url: `/api/v1/public/easybuy-requests/${encodeURIComponent(requestId)}/documents/claim`,
+        method: "POST",
+        ...(documentsToken ? { headers: { "x-documents-token": documentsToken } } : {}),
+        suppressGlobalLoader: true,
+        suppressErrorToast: true,
+      }),
+      invalidatesTags: [{ type: "MyApplications", id: "LIST" }],
     }),
 
     getMyReceipts: builder.query<ApiSuccess<ReceiptItem[]>, void>({
@@ -495,6 +550,12 @@ export const {
   useGetDashboardQuery,
   useGetEasyBoughtItemsQuery,
   useGetEasyBuyCatalogQuery,
+  useGetPublicProvidersQuery,
+  useGetPublicEasyBuyCatalogQuery,
+  useGetMyApplicationsQuery,
+  useCreatePublicEasyBuyRequestMutation,
+  useSavePublicEasyBuyDraftStepMutation,
+  useClaimPublicEasyBuyRequestMutation,
   useGetMyReceiptsQuery,
   useUploadReceiptMutation,
   useGetPendingReceiptsQuery,

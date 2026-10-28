@@ -80,10 +80,19 @@ export type EasyBuyPlanRules = {
   downPaymentRule?: DownPaymentRule;
 };
 
+/** The EasyBuy service charge (Shortwork/RESELLER-PLAN.md §8b): basis points of the financed amount or the price. */
+export type EasyBuyServiceFeeRule = {
+  bps: number;
+  base: "financed" | "price";
+  refundable: boolean;
+};
+
 export type EasyBuyCatalogResponse = {
   models: EasyBuyCatalogItem[];
   planRules: EasyBuyPlanRules;
   provider?: string;
+  /** Published by the public catalog so Apply can show the charge before anyone applies. */
+  serviceFee?: EasyBuyServiceFeeRule;
 };
 
 export type EasyBuyPricingModel = {
@@ -284,6 +293,23 @@ export type PublicEasyBuyRequest = {
   convertedEasyBoughtItemId?: string;
   createdAt: string;
   updatedAt: string;
+};
+
+/**
+ * One of the signed-in person's applications, from `GET /api/v1/public/easybuy-requests/mine`.
+ * No personal details beyond the device and plan: this is the applicant's own status list.
+ */
+export type MyEasyBuyApplication = {
+  requestId: string;
+  provider?: string;
+  iphoneModel: string;
+  capacity: string;
+  plan: "Monthly" | "Weekly";
+  status: PublicEasyBuyRequestStatus;
+  createdAt?: string;
+  approvedAt?: string;
+  rejectedAt?: string;
+  convertedAt?: string;
 };
 
 export type PublicEasyBuyAbandonedDraft = {

@@ -125,6 +125,8 @@ export const DashboardPage = () => {
     );
   }
 
+  // Zeros while the first response is in flight — behind the blur — but no invented plan status:
+  // "cancelled" is a real state and must never be shown for a loan that simply hasn't loaded.
   const dashboard = dashboardQuery.data || {
     totalAmount: 0,
     totalPaid: 0,
@@ -133,9 +135,9 @@ export const DashboardPage = () => {
     progress: 0,
     nextPaymentDue: null,
     nextPaymentAmount: 0,
-    planStatus: "cancelled" as const,
     recentPayments: [],
   };
+  const planStatus = dashboardQuery.data?.planStatus;
 
   const owedAmount = Math.max(Number(dashboard.owedAmount || 0), 0);
 
@@ -179,9 +181,9 @@ export const DashboardPage = () => {
             <h2 className="text-lg font-semibold">Payment Action Center</h2>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`rounded-full px-3 py-1 text-xs font-medium ${planStyles[dashboard.planStatus]}`}>
-              {dashboard.planStatus}
-            </span>
+            {planStatus ? (
+              <span className={`rounded-full px-3 py-1 text-xs font-medium ${planStyles[planStatus]}`}>{planStatus}</span>
+            ) : null}
             <button
               type="button"
               onClick={() => setShowPaymentAccountsModal(true)}
