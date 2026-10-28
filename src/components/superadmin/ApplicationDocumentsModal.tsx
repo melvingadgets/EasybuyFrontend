@@ -72,8 +72,6 @@ export const ApplicationDocumentsModal = ({ requestId, applicantName, onClose }:
               <h3 className="font-semibold">NIN</h3>
               {documents.nin.provided && documents.nin.value ? (
                 <p className="mt-1 font-mono text-base tracking-wider">{documents.nin.value}</p>
-              ) : documents.ninUnreadable ? (
-                <p className="mt-1 text-destructive">A NIN was saved but can't be read (encryption key mismatch).</p>
               ) : (
                 <p className="mt-1 text-muted-foreground">Not provided yet.</p>
               )}

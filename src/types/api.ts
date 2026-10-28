@@ -252,7 +252,6 @@ export type PublicEasyBuyRequestDocuments = {
   missing: Array<"bank_statement" | "nin" | "nin_selfie">;
   downPaymentConfirmed: boolean;
   nin: { provided: boolean; value?: string };
-  ninUnreadable?: boolean;
   bankStatements: PublicEasyBuyDocumentFile[];
   ninSelfie: PublicEasyBuyDocumentFile | null;
   linkExpiresInSeconds: number;
