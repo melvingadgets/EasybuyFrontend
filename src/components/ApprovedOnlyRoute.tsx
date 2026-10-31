@@ -1,5 +1,6 @@
 import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
 import { auth } from "../lib/auth";
+import { hasMinRole } from "../lib/access";
 import { decideApplicationAccess } from "../lib/applicationAccess";
 import { statusStyle } from "./apply/applicationStatus";
 import { useGetEasyBoughtItemsQuery, useGetMyApplicationsQuery } from "../store/api/backendApi";
@@ -71,9 +72,9 @@ const ActivatingScreen = ({ model, capacity, plan, requestId }: { model: string;
 
 export const ApprovedOnlyRoute = () => {
   const location = useLocation();
-  const role = auth.getRole();
-
-  const staff = role === "Admin" || role === "SuperAdmin";
+  // Staff bypass the approval gate: they are looking at the shop, not at their own loan.
+  // `hasMinRole` is rank-based, so it answers for both staff tiers without naming them.
+  const staff = hasMinRole(auth.getClaim(), "Admin");
 
   const applicationsQuery = useGetMyApplicationsQuery(undefined, { skip: staff });
   const itemsQuery = useGetEasyBoughtItemsQuery(undefined, { skip: staff });

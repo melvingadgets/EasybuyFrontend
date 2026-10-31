@@ -56,27 +56,33 @@ const App = () => {
           <Route element={<ProtectedRoute />}>
             <Route element={<ApprovedOnlyRoute />}>
               <Route path="/dashboard" element={<DashboardPage />} />
-              <Route element={<ProtectedRoute allowedRoles={["User"]} />}>
+              {/* Rank floor, not a role list: every signed-in person may see these, and the
+                  old `["User"]` check locked Admin and SuperAdmin out of their own screens. */}
+              <Route element={<ProtectedRoute minRole="User" />}>
                 <Route path="/items" element={<ItemsPage />} />
                 <Route path="/receipts" element={<ReceiptUploadPage />} />
               </Route>
             </Route>
           </Route>
 
-          <Route element={<ProtectedRoute allowedRoles={["SuperAdmin"]} />}>
+          {/* Each screen names the permission the API enforces on the same action. */}
+          <Route element={<ProtectedRoute perm="easybuy.admins.create" />}>
             <Route path="/register" element={<RegisterPage />} />
           </Route>
 
-          <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
+          <Route element={<ProtectedRoute perm="easybuy.users.create" />}>
             <Route path="/create-user" element={<CreateUserPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute perm="easybuy.catalog.write" />}>
             <Route path="/create-item" element={<CreateItemPage />} />
           </Route>
 
-          <Route element={<ProtectedRoute allowedRoles={["SuperAdmin"]} />}>
+          <Route element={<ProtectedRoute perm="easybuy.receipts.approve" />}>
             <Route path="/receipt-approvals" element={<AdminReceiptApprovalsPage />} />
           </Route>
 
-          <Route element={<ProtectedRoute allowedRoles={["SuperAdmin"]} />}>
+          <Route element={<ProtectedRoute perm="easybuy.superadmin.access" />}>
             <Route path="/superadmin" element={<SuperAdminPage />} />
             <Route path="/superadmin/pricing" element={<SuperAdminPricingPage />} />
             <Route path="/superadmin/public-analytics" element={<SuperAdminPublicAnalyticsPage />} />

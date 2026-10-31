@@ -1,6 +1,7 @@
 import type { IconType } from "react-icons";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { auth } from "../lib/auth";
+import { can, type Permission } from "../lib/access";
 import { useEffect, useState } from "react";
 import { useAppDispatch } from "../store/hooks";
 import { backendApi } from "../store/api/backendApi";
@@ -30,27 +31,28 @@ type NavItem = {
   icon: IconType;
   guestOnly?: boolean;
   authOnly?: boolean;
-  roles?: Array<"Admin" | "User" | "SuperAdmin">;
+  /** The permission this link leads to. A link is shown only when the API would accept it. */
+  perm?: Permission;
 };
 
 const navItems = [
   { to: "/login", label: "Login", icon: FaSignInAlt, guestOnly: true },
-  { to: "/register", label: "Register Admin", icon: FaUserShield, authOnly: true, roles: ["SuperAdmin"] },
+  { to: "/register", label: "Register Admin", icon: FaUserShield, authOnly: true, perm: "easybuy.admins.create" },
   { to: "/apply", label: "Apply", icon: FaBoxOpen },
   { to: "/apply/status", label: "My Applications", icon: FaCheckCircle, authOnly: true },
   { to: "/dashboard", label: "Dashboard", icon: FaTachometerAlt, authOnly: true },
   { to: "/profile", label: "Profile", icon: FaUserCircle, authOnly: true },
-  { to: "/receipts", label: "My Receipts", icon: FaReceipt, authOnly: true, roles: ["User"] },
-  { to: "/receipt-approvals", label: "Receipt Approvals", icon: FaCheckCircle, authOnly: true, roles: ["SuperAdmin"] },
-  { to: "/superadmin/date-maintenance", label: "Date Maintenance", icon: FaCalendarAlt, authOnly: true, roles: ["SuperAdmin"] },
-  { to: "/create-user", label: "Create User", icon: FaUserPlus, authOnly: true, roles: ["Admin"] },
-  { to: "/items", label: "EasyBought Items", icon: FaBoxOpen, authOnly: true, roles: ["User"] },
-  { to: "/create-item", label: "Create Item", icon: FaPlusSquare, authOnly: true, roles: ["Admin"] },
-  { to: "/superadmin", label: "Super Admin", icon: FaUserCog, authOnly: true, roles: ["SuperAdmin"] },
-  { to: "/superadmin/pricing", label: "Pricing", icon: FaBoxOpen, authOnly: true, roles: ["SuperAdmin"] },
-  { to: "/superadmin/public-analytics", label: "Public Analytics", icon: FaChartLine, authOnly: true, roles: ["SuperAdmin"] },
-  { to: "/superadmin/public-requests", label: "Public Requests", icon: FaReceipt, authOnly: true, roles: ["SuperAdmin"] },
-  { to: "/superadmin/abandoned-drafts", label: "Abandoned Drafts", icon: FaReceipt, authOnly: true, roles: ["SuperAdmin"] },
+  { to: "/receipts", label: "My Receipts", icon: FaReceipt, authOnly: true },
+  { to: "/receipt-approvals", label: "Receipt Approvals", icon: FaCheckCircle, authOnly: true, perm: "easybuy.receipts.approve" },
+  { to: "/superadmin/date-maintenance", label: "Date Maintenance", icon: FaCalendarAlt, authOnly: true, perm: "easybuy.superadmin.access" },
+  { to: "/create-user", label: "Create User", icon: FaUserPlus, authOnly: true, perm: "easybuy.users.create" },
+  { to: "/items", label: "EasyBought Items", icon: FaBoxOpen, authOnly: true },
+  { to: "/create-item", label: "Create Item", icon: FaPlusSquare, authOnly: true, perm: "easybuy.catalog.write" },
+  { to: "/superadmin", label: "Super Admin", icon: FaUserCog, authOnly: true, perm: "easybuy.superadmin.access" },
+  { to: "/superadmin/pricing", label: "Pricing", icon: FaBoxOpen, authOnly: true, perm: "easybuy.superadmin.access" },
+  { to: "/superadmin/public-analytics", label: "Public Analytics", icon: FaChartLine, authOnly: true, perm: "easybuy.superadmin.access" },
+  { to: "/superadmin/public-requests", label: "Public Requests", icon: FaReceipt, authOnly: true, perm: "easybuy.superadmin.access" },
+  { to: "/superadmin/abandoned-drafts", label: "Abandoned Drafts", icon: FaReceipt, authOnly: true, perm: "easybuy.superadmin.access" },
 ] as NavItem[];
 
 export const Layout = () => {
@@ -59,7 +61,7 @@ export const Layout = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const isLoggedIn = auth.isLoggedIn();
-  const role = auth.getRole();
+  const claim = auth.getClaim();
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("easybuytracker_theme");
@@ -72,7 +74,7 @@ export const Layout = () => {
   const visibleNavItems = navItems.filter((item) => {
     if (item.guestOnly && isLoggedIn) return false;
     if (item.authOnly && !isLoggedIn) return false;
-    if (item.roles && (!role || !item.roles.includes(role))) return false;
+    if (item.perm && !can(claim, item.perm)) return false;
     return true;
   });
 

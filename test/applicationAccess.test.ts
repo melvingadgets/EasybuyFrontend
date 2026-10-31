@@ -16,9 +16,11 @@ const request = (status: PublicEasyBuyRequestStatus, requestId = `EB-${status}`)
   status,
 });
 
-test("no applications: the customer is sent to start one", () => {
+test("no applications: a loan still opens the dashboard, and only no loan at all sends them to apply", () => {
   assert.deepEqual(decideApplicationAccess([], false), { kind: "no_applications" });
-  assert.deepEqual(decideApplicationAccess([], true), { kind: "no_applications" });
+  // A person migrated onto EasyBuy has a financed item but no Apply history. Sending them to
+  // /apply starts a second application for a phone they already have (2026-10-28 audit).
+  assert.deepEqual(decideApplicationAccess([], true), { kind: "open" });
 });
 
 test("received or under review: documents are still editable, so the status page", () => {

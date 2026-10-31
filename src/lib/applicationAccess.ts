@@ -20,7 +20,7 @@ export type AccessDecision =
   | { kind: "rejected"; request: MyEasyBuyApplication }
   /** Converted, but no item is linked to this person: a support case, not an empty dashboard. */
   | { kind: "converted_unlinked"; request: MyEasyBuyApplication }
-  /** No applications at all. */
+  /** No applications and no financed item: nothing to show, so start one. */
   | { kind: "no_applications" };
 
 // An old rejection should not hide a newer live application: the most advanced one decides.
@@ -44,7 +44,11 @@ export const decideApplicationAccess = (
   hasItems: boolean
 ): AccessDecision => {
   const latest = latestByPriority(requests);
-  if (!latest) return { kind: "no_applications" };
+  // A loan can exist without any Apply history: the customer was migrated onto EasyBuy, or their
+  // request was converted before requests carried a personId. The loan is the fact that decides
+  // the screen — sending them to /apply starts a second application for a phone they already have
+  // (the dashboard lockout from the 2026-10-28 audit).
+  if (!latest) return hasItems ? { kind: "open" } : { kind: "no_applications" };
 
   switch (latest.status) {
     case "converted":

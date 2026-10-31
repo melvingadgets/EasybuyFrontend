@@ -1,4 +1,5 @@
 import { getMelvinBridgeToken, isEmbeddedInMelvin } from "./melvinBridge";
+import type { AccessActor } from "./access";
 
 const TOKEN_KEY = "easybuytracker_token";
 const SESSION_TOKEN_KEY = "easybuytracker_session_token";
@@ -6,7 +7,10 @@ const LEGACY_SESSION_TOKEN_KEY = "easybuytracker_sessiontoken";
 // The refresh token from the unified auth service. Long-lived and single-use (auth rotates it on
 // every refresh), so the newest one always replaces the old.
 const REFRESH_TOKEN_KEY = "easybuytracker_refresh_token";
-type UserRole = "Admin" | "User" | "SuperAdmin" | null;
+// The claim, as the token carries it. Kept as `unknown` on purpose: the guards in lib/access.ts
+// are what decide whether a value is a real role, and they fail closed. Typing this as the union
+// would let a JSON payload lie to the compiler.
+type UserClaim = AccessActor;
 
 // Inside Melvin OS the session comes from the bridge and lives in memory only.
 // Everywhere else it's the app's own token in localStorage.
@@ -25,7 +29,8 @@ const forgetStoredToken = (): void => {
 };
 
 type JwtPayload = {
-  role?: "Admin" | "User" | "SuperAdmin";
+  role?: unknown;
+  domainRoles?: unknown;
   exp?: number;
 };
 
@@ -86,7 +91,12 @@ export const auth = {
     }
     return true;
   },
-  getRole: (): UserRole => {
+  /**
+   * The verified claim the guards evaluate: `{ role, domainRoles }` straight from the token.
+   * Nothing is defaulted — `can` and `hasMinRole` return false for a missing or unknown role,
+   * which is what stops a malformed token from being shown a staff screen.
+   */
+  getClaim: (): UserClaim => {
     const token = currentToken();
     if (!token) return null;
     const payload = parseJwtPayload(token);
@@ -94,6 +104,6 @@ export const auth = {
       forgetStoredToken();
       return null;
     }
-    return payload?.role || null;
+    return { role: payload.role, domainRoles: payload.domainRoles };
   }
 };
