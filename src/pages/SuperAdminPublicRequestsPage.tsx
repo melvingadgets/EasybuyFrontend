@@ -568,6 +568,15 @@ export const SuperAdminPublicRequestsPage = () => {
         item={viewDetailsModalRequest}
         title="Public Request Details"
         onClose={() => setViewDetailsModalRequest(null)}
+        onViewDocuments={
+          viewDetailsModalRequest?.documents?.required
+            ? () => {
+                const req = viewDetailsModalRequest;
+                setViewDetailsModalRequest(null);
+                setDocumentsModalRequest(req);
+              }
+            : undefined
+        }
       />
       {documentsModalRequest ? (
         <ApplicationDocumentsModal

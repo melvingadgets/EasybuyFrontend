@@ -34,8 +34,8 @@ export const APPLICATION_STATUS: Record<PublicEasyBuyRequestStatus, ApplicationS
   },
 };
 
-/** Applications that can still take documents: approval or rejection locks them. */
-export const OPEN_STATUSES = new Set<PublicEasyBuyRequestStatus>(["pending_verification", "verified"]);
+/** Applications that can still take documents: only approval locks them. */
+export const OPEN_STATUSES = new Set<PublicEasyBuyRequestStatus>(["pending_verification", "verified", "rejected"]);
 
 /** The gate's unlock point: from here the app shell opens (still "activating" until `converted`). */
 export const UNLOCKED_STATUSES = new Set<PublicEasyBuyRequestStatus>(["approved", "converted"]);

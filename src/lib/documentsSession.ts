@@ -19,6 +19,11 @@ export type DocumentsSession = {
   /** Set once all three documents are in, so "/apply" stops sending them back to the upload form. */
   complete?: boolean;
   downPaymentNaira?: number;
+  applicationType?: "online" | "physical_appearance";
+  visitDate?: string;
+  visitTimeSlot?: string;
+  visitStoreLocation?: string;
+  verificationPassCode?: string;
   whatsAppUrl?: string;
   savedAt: number;
 };

@@ -60,6 +60,10 @@ const initialFormState: ApplyFormState = {
   downPayment: "",
   monthlyPlan: "",
   weeklyPlan: "",
+  applicationType: "online",
+  visitDate: "",
+  visitTimeSlot: "10:00 AM - 12:00 PM",
+  visitStoreLocation: "Melvin Gadgets Hub, Computer Village, Ikeja, Lagos",
 };
 
 const isValidEmail = (value: string) => /^\S+@\S+\.\S+$/.test(value.trim());
@@ -547,6 +551,11 @@ export function ApplyForm() {
           downPaymentNaira: parseFormattedNumber(form.downPayment) || undefined,
           whatsAppUrl,
           savedAt: Date.now(),
+          applicationType: (response as any)?.data?.applicationType || form.applicationType,
+          visitDate: (response as any)?.data?.visitDate || form.visitDate,
+          visitTimeSlot: (response as any)?.data?.visitTimeSlot || form.visitTimeSlot,
+          visitStoreLocation: (response as any)?.data?.visitStoreLocation || form.visitStoreLocation,
+          verificationPassCode: (response as any)?.data?.verificationPassCode,
         });
         navigate("/apply/documents");
         return;

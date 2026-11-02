@@ -1,3 +1,4 @@
+import { InStoreVerificationPass } from "./InStoreVerificationPass";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import ClipLoader from "react-spinners/ClipLoader";
 import { backendUrl } from "../../lib/backendBase";
@@ -20,6 +21,12 @@ type Summary = {
   nin: { provided: boolean; last4?: string };
   ninSelfie: { uploadedAt: string } | null;
   limits: { maxFileBytes: number; maxBankStatements: number };
+  applicationType?: "online" | "physical_appearance";
+  visitDate?: string;
+  visitTimeSlot?: string;
+  visitStoreLocation?: string;
+  verificationPassCode?: string;
+  physicalVerifiedAt?: string;
 };
 
 export type DocumentsAuth = { documentsToken?: string; bearer?: string | null };
@@ -268,6 +275,18 @@ export function ApplicationDocuments({ requestId, auth, downPaymentNaira, whatsA
         </div>
       ) : null}
 
+      {summary.applicationType === "physical_appearance" && summary.verificationPassCode ? (
+        <InStoreVerificationPass
+          requestId={summary.requestId}
+          passCode={summary.verificationPassCode}
+          visitDate={summary.visitDate}
+          visitTimeSlot={summary.visitTimeSlot}
+          visitStoreLocation={summary.visitStoreLocation}
+          documentsComplete={summary.complete}
+          compact={compact}
+        />
+      ) : null}
+
       <div className="flex items-center gap-3" aria-live="polite">
         <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
           <div className="h-full rounded-full bg-emerald-600 transition-all" style={{ width: `${(done / 3) * 100}%` }} />
@@ -277,7 +296,7 @@ export function ApplicationDocuments({ requestId, auth, downPaymentNaira, whatsA
 
       {!editable ? (
         <p className="rounded-lg border border-border bg-muted p-3 text-sm">
-          This application has been reviewed, so its documents can no longer be changed.
+          This application has been approved, so its documents can no longer be changed.
         </p>
       ) : null}
 

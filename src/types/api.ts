@@ -1,3 +1,4 @@
+export type ApplicationType = "online" | "physical_appearance";
 export type ApiSuccess<T = unknown> = {
   message: string;
   success?: number;
@@ -277,6 +278,12 @@ export type PublicEasyBuyRequest = {
   capacity: string;
   plan: "Monthly" | "Weekly";
   provider?: string;
+  applicationType?: ApplicationType;
+  visitDate?: string;
+  visitTimeSlot?: string;
+  visitStoreLocation?: string;
+  verificationPassCode?: string;
+  physicalVerifiedAt?: string;
   status: PublicEasyBuyRequestStatus;
   rejectionReason?: string;
   reviewedAt?: string;
@@ -305,6 +312,12 @@ export type MyEasyBuyApplication = {
   iphoneModel: string;
   capacity: string;
   plan: "Monthly" | "Weekly";
+  applicationType?: ApplicationType;
+  visitDate?: string;
+  visitTimeSlot?: string;
+  visitStoreLocation?: string;
+  verificationPassCode?: string;
+  physicalVerifiedAt?: string;
   status: PublicEasyBuyRequestStatus;
   createdAt?: string;
   approvedAt?: string;
@@ -321,6 +334,10 @@ export type PublicEasyBuyAbandonedDraft = {
   capacity?: string;
   plan?: "Monthly" | "Weekly";
   provider?: string;
+  applicationType?: ApplicationType;
+  visitDate?: string;
+  visitTimeSlot?: string;
+  visitStoreLocation?: string;
   currentStep?: 1 | 2 | 3;
   createdAt?: string;
   updatedAt?: string;

@@ -1,3 +1,4 @@
+import { InStoreVerificationPass } from "./InStoreVerificationPass";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ApplicationDocuments } from "./ApplicationDocuments";
@@ -25,7 +26,7 @@ export function MyApplications({ showWhenEmpty = false }: Props) {
   // Documents accept our own token; the Melvin OS token is only good while the OS session is live,
   // so it is passed as the bearer too — both are the same credential the backend already trusts.
   const token = auth.getToken();
-  const bearer = token && !isMelvinBridgeToken(token) ? token : null;
+  const bearer = token || null;
 
   if (!signedIn) return null;
 
@@ -60,6 +61,11 @@ export function MyApplications({ showWhenEmpty = false }: Props) {
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-medium">
                     {request.iphoneModel} ({request.capacity}) · {request.plan}
+                    {request.applicationType === "physical_appearance" ? (
+                      <span className="ml-2 inline-flex items-center rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                        In-Store Visit
+                      </span>
+                    ) : null}
                   </span>
                   <span className="block text-xs text-muted-foreground">{request.requestId}</span>
                 </span>

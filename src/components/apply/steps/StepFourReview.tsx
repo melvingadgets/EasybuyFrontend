@@ -37,6 +37,22 @@ export function StepFourReview({
 
         <dl className="mt-4 grid gap-3 text-base sm:grid-cols-2">
           <div>
+            <dt className="text-sm text-muted-foreground">Application Method</dt>
+            <dd className="font-medium">
+              {form.applicationType === "physical_appearance"
+                ? "🏛️ Physical Appearance (In-Store at Computer Village)"
+                : "🌐 100% Online Application"}
+            </dd>
+          </div>
+          {form.applicationType === "physical_appearance" ? (
+            <div>
+              <dt className="text-sm text-muted-foreground">Store Visit Slot</dt>
+              <dd className="font-medium">
+                {form.visitDate || "Upcoming business day"} ({form.visitTimeSlot || "10:00 AM - 12:00 PM"})
+              </dd>
+            </div>
+          ) : null}
+          <div>
             <dt className="text-sm text-muted-foreground">Name</dt>
             <dd className="font-medium">{form.fullName || "-"}</dd>
           </div>

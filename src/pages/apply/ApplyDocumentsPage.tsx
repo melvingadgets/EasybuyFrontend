@@ -1,37 +1,34 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import ClipLoader from "react-spinners/ClipLoader";
 import { ApplicationDocuments } from "../../components/apply/ApplicationDocuments";
 import { clearDocumentsSession, loadDocumentsSession, saveDocumentsSession, type DocumentsSession } from "../../lib/documentsSession";
 import { auth } from "../../lib/auth";
-import { useClaimPublicEasyBuyRequestMutation } from "../../store/api/backendApi";
+import { useClaimPublicEasyBuyRequestMutation, useGetMyApplicationsQuery } from "../../store/api/backendApi";
 
-// The documents step, for the application this device submitted. It sits behind the login wall:
-// an anonymous applicant who submits is sent to /login and comes back here, with their request
-// still waiting in localStorage.
-//
-// On arrival the application is claimed silently — bound to the signed-in person — so it appears
-// in "My applications" and the approval gate can see it. The claim is idempotent and takes no
-// ownership from anyone else, so it is safe to repeat on every visit.
+// The documents step, for the application this device submitted or an existing open application.
+// Applicants can add, review, and update their documents anytime before approval.
 
 export const ApplyDocumentsPage = () => {
   const navigate = useNavigate();
-  const [claim, { isLoading: claiming }] = useClaimPublicEasyBuyRequestMutation();
+  const [searchParams] = useSearchParams();
+  const paramRequestId = searchParams.get("requestId")?.trim() || "";
 
-  // Read once: the session is edited below (claiming drops the token), and re-reading would
-  // re-render the panel into a different credential mid-flow.
+  const [claim, { isLoading: claiming }] = useClaimPublicEasyBuyRequestMutation();
   const [session, setSession] = useState<DocumentsSession | null>(() => loadDocumentsSession());
   const [claimState, setClaimState] = useState<"idle" | "claimed" | "kept">("idle");
 
-  // Whichever token the app is signed in with — this app's own, or the one Melvin OS handed over.
-  // The backend verifies both the same way, and the documents routes accept either.
   const bearer = auth.getToken();
+  const { data: myAppsData, isLoading: appsLoading } = useGetMyApplicationsQuery(undefined, { skip: !auth.isLoggedIn() });
+  const requests = myAppsData?.data || [];
+  const openRequests = requests.filter((r) => r.status !== "approved" && r.status !== "converted");
+  const targetRequest = paramRequestId ? requests.find((r) => r.requestId === paramRequestId) : openRequests[0];
 
+  const effectiveRequestId = paramRequestId || session?.requestId || targetRequest?.requestId || "";
 
   useEffect(() => {
-    if (!session) return;
+    if (!session || !session.documentsToken) return;
 
-    // Already claimed on an earlier visit: the key is gone by design (claiming consumes it), and
-    // the bearer alone opens the application now. Nothing left to do.
     if (session.claimed) {
       setClaimState("claimed");
       return;
@@ -43,30 +40,37 @@ export const ApplyDocumentsPage = () => {
       .then(() => {
         if (!active) return;
         setClaimState("claimed");
-        // The bearer is the more durable credential now that the request is bound to this person,
-        // so the 30-day upload key is no longer needed on this device.
         const claimed = { ...session, documentsToken: undefined, claimed: true };
         saveDocumentsSession(claimed);
         setSession(claimed);
       })
-      .catch((error: any) => {
+      .catch(() => {
         if (!active) return;
-        // 409: already someone else's — this device's key is the only way in, so keep using it.
-        // Anything else (offline, an older backend without the route): same fallback, so the
-        // applicant is never locked out of uploading their own documents.
         setClaimState("kept");
       });
 
     return () => {
       active = false;
     };
-    // The request id is the identity of this claim; the token never changes for one request.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.requestId]);
 
-  const auth_ = useMemo(() => ({ documentsToken: session?.documentsToken || undefined, bearer }), [session?.documentsToken, bearer]);
+  const auth_ = useMemo(
+    () => ({
+      documentsToken: session?.requestId === effectiveRequestId ? session?.documentsToken : undefined,
+      bearer,
+    }),
+    [session?.requestId, session?.documentsToken, effectiveRequestId, bearer]
+  );
 
-  if (!session) {
+  if (appsLoading && !effectiveRequestId) {
+    return (
+      <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
+        <ClipLoader size={16} color="currentColor" /> Loading application documents…
+      </div>
+    );
+  }
+
+  if (!effectiveRequestId) {
     return (
       <div className="mx-auto w-full max-w-3xl px-4 py-10 md:px-6">
         <section className="rounded-2xl border border-border bg-card p-5 shadow-soft sm:p-6">
@@ -98,17 +102,17 @@ export const ApplyDocumentsPage = () => {
     <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-10 md:px-6">
       <section className="rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-soft sm:p-6">
         <ApplicationDocuments
-          requestId={session.requestId}
+          requestId={effectiveRequestId}
           auth={auth_}
-          downPaymentNaira={session.downPaymentNaira}
-          whatsAppUrl={session.whatsAppUrl}
+          downPaymentNaira={session?.requestId === effectiveRequestId ? session?.downPaymentNaira : undefined}
+          whatsAppUrl={session?.requestId === effectiveRequestId ? session?.whatsAppUrl : undefined}
           onSummary={({ complete }) => {
-            // Remembered so "/apply" stops offering the form to someone who has finished uploading.
-            // Only written when it changes, so the session isn't rewritten on every summary.
-            if (complete === Boolean(session.complete)) return;
-            const next = { ...session, complete };
-            saveDocumentsSession(next);
-            setSession(next);
+            if (session?.requestId === effectiveRequestId) {
+              if (complete === Boolean(session.complete)) return;
+              const next = { ...session, complete };
+              saveDocumentsSession(next);
+              setSession(next);
+            }
           }}
           onStartNew={() => {
             clearDocumentsSession();

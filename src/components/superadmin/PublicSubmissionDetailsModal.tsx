@@ -8,6 +8,7 @@ type PublicSubmissionDetailsModalProps = {
   item: PublicEasyBuySubmission | null;
   title: string;
   onClose: () => void;
+  onViewDocuments?: () => void;
 };
 
 const ORDERED_KEYS = [
@@ -17,6 +18,12 @@ const ORDERED_KEYS = [
   "phone",
   "anonymousId",
   "currentStep",
+  "applicationType",
+  "visitDate",
+  "visitTimeSlot",
+  "visitStoreLocation",
+  "verificationPassCode",
+  "physicalVerifiedAt",
   "iphoneModel",
   "capacity",
   "plan",
@@ -95,7 +102,7 @@ const buildWhatsappMessage = (item: Record<string, unknown>) =>
 
 const normalizeWhatsAppNumber = (phone: string) => phone.replace(/\D/g, "");
 
-export const PublicSubmissionDetailsModal = ({ item, onClose, title }: PublicSubmissionDetailsModalProps) => {
+export const PublicSubmissionDetailsModal = ({ item, onClose, title, onViewDocuments }: PublicSubmissionDetailsModalProps) => {
   if (!item) return null;
 
   const payload = buildWhatsappMessage(item as Record<string, unknown>);
@@ -123,6 +130,15 @@ export const PublicSubmissionDetailsModal = ({ item, onClose, title }: PublicSub
             <p className="mt-1 text-sm text-muted-foreground">Submitted details captured from the request</p>
           </div>
 
+          {onViewDocuments && (
+            <button
+              type="button"
+              onClick={onViewDocuments}
+              className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/20"
+            >
+              View Documents
+            </button>
+          )}
           {whatsappHref ? (
             <a
               href={whatsappHref}
@@ -152,7 +168,16 @@ export const PublicSubmissionDetailsModal = ({ item, onClose, title }: PublicSub
           })}
         </div>
 
-        <div className="mt-5 flex justify-end">
+        <div className="mt-5 flex justify-end gap-2">
+          {onViewDocuments && (
+            <button
+              type="button"
+              onClick={onViewDocuments}
+              className="rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/20"
+            >
+              View Documents
+            </button>
+          )}
           <button
             type="button"
             onClick={onClose}
