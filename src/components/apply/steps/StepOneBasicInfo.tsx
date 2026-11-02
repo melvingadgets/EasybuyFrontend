@@ -45,7 +45,7 @@ export function StepOneBasicInfo({ form, errors, onChange, onFirstInteraction }:
               onFirstInteraction();
               onChange("applicationType", "physical_appearance");
               if (!form.visitStoreLocation) {
-                onChange("visitStoreLocation", "Melvin Gadgets Hub, Computer Village, Ikeja, Lagos");
+                onChange("visitStoreLocation", "No. 7 Otigba Street, Beside Micro Station, Computer Village, Ikeja, Lagos");
               }
               if (!form.visitTimeSlot) {
                 onChange("visitTimeSlot", "10:00 AM - 12:00 PM");
@@ -74,9 +74,9 @@ export function StepOneBasicInfo({ form, errors, onChange, onFirstInteraction }:
           <div className="flex items-start gap-2.5">
             <span className="text-lg">📍</span>
             <div>
-              <p className="text-sm font-semibold text-foreground">Melvin Gadgets Hub, Computer Village</p>
+              <p className="text-sm font-semibold text-foreground">Melvin Gadgets Hub — Ikeja Store</p>
               <p className="text-xs text-muted-foreground">
-                12 Otigba Street / Pepple Street, Computer Village, Ikeja, Lagos.
+                No. 7 Otigba Street, Beside Micro Station, Computer Village, Ikeja, Lagos.
                 <span className="block font-medium text-emerald-700 dark:text-emerald-400">
                   Open: Mon – Sat (9:00 AM – 6:00 PM)
                 </span>
