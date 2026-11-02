@@ -71,6 +71,15 @@ export const Layout = () => {
     setIsDarkMode(shouldUseDark);
   }, []);
 
+  useEffect(() => {
+    if (!open) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open]);
+
   const visibleNavItems = navItems.filter((item) => {
     if (item.guestOnly && isLoggedIn) return false;
     if (item.authOnly && !isLoggedIn) return false;
@@ -142,7 +151,7 @@ export const Layout = () => {
 
       <div className="flex w-full min-w-0 overflow-x-clip">
         <aside
-          className={`fixed inset-y-0 left-0 z-30 w-72 transform border-r border-sidebar-border bg-sidebar p-6 text-sidebar-foreground shadow-soft transition-transform duration-300 md:translate-x-0 ${
+          className={`fixed inset-y-0 left-0 z-30 w-72 transform overflow-y-auto overscroll-contain border-r border-sidebar-border bg-sidebar p-6 pb-12 text-sidebar-foreground shadow-soft transition-transform duration-300 md:translate-x-0 ${
             open ? "translate-x-0" : "-translate-x-full"
           }`}
         >

@@ -152,13 +152,34 @@
   }
 }
 
+/* Sidebar navigation scrolling & subtle scrollbar */
+aside {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--sidebar-border)) transparent;
+}
+
+aside::-webkit-scrollbar {
+  width: 5px;
+}
+
+aside::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+aside::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--sidebar-border));
+  border-radius: 9999px;
+}
+
 /* Inside Melvin OS the phone frame hides scrollbars, so the embedded page does too. */
 html.melvin-embed,
-html.melvin-embed body {
+html.melvin-embed body,
+html.melvin-embed aside {
   scrollbar-width: none;
 }
 
 html.melvin-embed::-webkit-scrollbar,
-html.melvin-embed body::-webkit-scrollbar {
+html.melvin-embed body::-webkit-scrollbar,
+html.melvin-embed aside::-webkit-scrollbar {
   display: none;
 }
